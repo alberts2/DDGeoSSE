@@ -101,6 +101,8 @@ while (do_simulation) {
     
     # draw next event type
     
+    # keep track of phylogeny and parent-child relationships as it evolves
+    
     # update current simulation state
     
     # check if we stop simulation
