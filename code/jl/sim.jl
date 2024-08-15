@@ -6,6 +6,8 @@
 #####################
 using Combinatorics # Package for combinatorics/permutations
 using OrderedCollections # Package for ordering dictionary 
+using DataStructures # Package for preserving dictionary order by its insertion order 
+
 
 #############
 # File system
@@ -31,26 +33,10 @@ num_regions = 3; # Number of regions
 num_ranges  = 2^3 - 1; # Number of possible ranges given num_regions
 num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
 num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
+#################################################
 # Create dictionary for region occupancy status (present/absent) and range labels
+#################################################
 # e.g. (1,0,0) means a species present only in region A, so it has range {A}.
-dict_values = zeros(Int64,0); # Intialize empty vector for the values vector of the dictionary
-for i in 1:num_ranges
-    push!(dict_values,i); # Populate the values field 
-end
-
-dict_keys = Vector{Int}[] # Create an empty vector of vectors
-for j in 1:num_regions
-  zero_vec = zeros(Int64,num_regions); # Create a zero vector of length num_regions
-  zero_vec[1:j] = fill(1,j); # Populating the vector with 1's for indicating presence/absence of species
-  range_comb = unique(permutations(zero_vec)); # different permutations of (1,...) for range size <= num_regions 
-  for k in 1:length(range_comb)
-    push!(dict_keys,range_comb[k]); # populating keys field of the dictionary
-  end
-end
-
-ranges_inv = Dict(dict_keys .=> dict_values)
-ranges_inv = sort(ranges_inv; byvalue=true) # sort the dictionary by its values field
-# ranges = [ [1,0,0], [0,1,0], [0,0,1], [1,1,0], [1,0,1], [1,1,0], [1,1,1] ]
 # ranges_inv = {
 #     (1,0,0):1,
 #     (0,1,0):2,
@@ -60,99 +46,202 @@ ranges_inv = sort(ranges_inv; byvalue=true) # sort the dictionary by its values 
 #     (0,1,1):6,
 #     (1,1,1):7
 # }
+dict_values = zeros(Int64,0); # Intialize empty vector for the values field of the dictionary
+for i in 1:num_ranges
+    push!(dict_values,i); # Populate the values field 
+end
 
-# define event space
+dict_keys = Vector{Int}[]; # Create an empty vector of vectors for the keys field of the dictionary
+for j in 1:num_regions
+  zero_vec = zeros(Int64,num_regions); # Create a zero vector of length num_regions
+  zero_vec[1:j] = fill(1,j); # Populating the vector with 1's for indicating presence/absence of species
+  range_comb = unique(permutations(zero_vec)); # different permutations of (1,...) for range size <= num_regions 
+  for k in 1:length(range_comb)
+    push!(dict_keys,range_comb[k]); # populating keys field of the dictionary
+  end
+end
 
-# Within-region speciation
+ranges_inv = Dict(dict_keys .=> dict_values) # Append the keys and values to the dictionary 
+ranges_inv = sort(ranges_inv; byvalue=true) # sort the dictionary by its values field
+# ranges = [ [1,0,0], [0,1,0], [0,0,1], [1,1,0], [1,0,1], [1,1,0], [1,1,1] ]
+
+
+# Define event space as dictionaries (for checking if we have a valid cladogenesis/anagenesis during simulation)
+################################################
+# Dictionary for within-region speciation (evt_w)
+################################################
 # key is ancestral range, value is list of possible child ranges that differ from ancestral range
 # for example:
 #     (1,1,0):[(1,0,0),(0,1,0)],
 # valid events:
-#     AB->AB,A
-#     AB->A,AB
-#     AB->AB,B
-#     AB->B,AB
-evt_w = {
-    (1,0,0):[(1,0,0)],
-    (0,1,0):[(0,1,0)],
-    (0,0,1):[(0,0,1)],
-    (1,1,0):[(1,0,0),(0,1,0)],
-    (1,0,1):[(1,0,0),(0,0,1)],
-    (0,1,1):[(0,1,0),(0,0,1)],
-    (1,1,1):[(1,0,0),(0,1,0),(0,0,1)]
-}
+#     AB->AB,A (budding cladogenesis)
+#     AB->A,AB (budding cladogenesis)
+#     AB->AB,B (budding cladogenesis)
+#     AB->B,AB (budding cladogenesis)
+# evt_w = {
+#     (1,0,0):[(1,0,0)],
+#     (0,1,0):[(0,1,0)],
+#     (0,0,1):[(0,0,1)],
+#     (1,1,0):[(1,0,0),(0,1,0)],
+#     (1,0,1):[(1,0,0),(0,0,1)],
+#     (0,1,1):[(0,1,0),(0,0,1)],
+#     (1,1,1):[(1,0,0),(0,1,0),(0,0,1)]
+# }
 
-# Extinction
-# ...
-evt_e = {
-    (1,0,0):[(0,0,0)],
-    (0,1,0):[(0,0,0)],
-    (0,0,1):[(0,0,0)],
-    (1,1,0):[(1,0,0),(0,1,0)],
-    (1,0,1):[(1,0,0),(0,0,1)],
-    (0,1,1):[(0,1,0),(0,0,1)],
-    (1,1,1):[(1,1,0),(1,0,1),(0,1,1)]
-}
+evt_w       = OrderedDict(); # Create an empty dictionary for within-region speciation 
+dict_keys_w = copy(dict_keys); # keys field of the dictionary evt_w
 
-# Dispersal
-# ...
-evt_d = {
-    (1,0,0):[(1,1,0),(1,0,1)],
-    (0,1,0):[(1,1,0),(0,1,1)],
-    (0,0,1):[(0,1,1),(0,1,1)],
-    (1,1,0):[(1,1,1)],
-    (1,0,1):[(1,1,1)],
-    (0,1,1):[(1,1,1)],
-    (1,1,1):[(,)]
-}
+for k in 1:length(dict_keys_w)
+    if count(==(1),dict_keys_w[k])==1 # if the ancestral range is of size 1 (endemic)
+        evt_w[dict_keys_w[k]] = dict_keys_w[k]; # assign possible range for children = ancestral range 
+    elseif count(==(1),dict_keys_w[k])>1 # if the ancestral range is of size > 1 (widespread)
+        idx = findall(dict_keys_w[k].== 1 ); # find locations of 1's in ancestral species range k
+        child_range_w = Vector{Int}[]; # initialize the vector of vectors to store all possible child ranges from ancestral of range k
+        for l in 1:length(idx) # loop over each 1 in ancestral species range k for within-region speciation in that location
+            child_range_idx = zeros(Int64,num_regions)
+            child_range_idx[idx[l]] = 1 # indicates that speciation happens in location idx[l] from the parent species with range k
+            push!(child_range_w,child_range_idx) # append to possible range for child species from ancenstral species with range k
+        end
+        evt_w[dict_keys_w[k]] = child_range_w; # create dictionary for evt_w
+    end
+end
 
-# Between-region speciation
-evt_b = {
-    (1,0,0):[(,)],
-    (0,1,0):[(,)],
-    (0,0,1):[(,)],
-    (1,1,0):[(1,0,0)],
-    (1,0,1):[(1,0,0)],
-    (0,1,1):[(0,1,0)],
-    (1,1,1):[(1,1,0),(1,0,1),(0,1,1)]
-}
+################################################
+# Dictionary for extinction (evt_e)
+################################################
+# key is range before extinction event, value is all possible ranges following an extinction. 
+# [(0,0,0)] indicates species extinction
+#
+# evt_e = {
+#     (1,0,0):[(0,0,0)],
+#     (0,1,0):[(0,0,0)],
+#     (0,0,1):[(0,0,0)],
+#     (1,1,0):[(1,0,0),(0,1,0)],
+#     (1,0,1):[(1,0,0),(0,0,1)],
+#     (0,1,1):[(0,1,0),(0,0,1)],
+#     (1,1,1):[(1,1,0),(1,0,1),(0,1,1)]
+# }
+evt_e       = OrderedDict(); # Create an empty dictionary for extinction
+dict_keys_e = copy(dict_keys); # keys field of the dictionary evt_e
 
-# define rates for event space
+for k in 1:length(dict_keys_e)
+    if count(==(1),dict_keys_e[k])==1 # if the range is of size 1 (endemic)
+        evt_e[dict_keys_e[k]] = zeros(Int64,num_regions); # species extinction 
+    elseif count(==(1),dict_keys_e[k])>1 # if the ancestral range is of size > 1 (widespread)
+        idx = findall(dict_keys_e[k].== 1 ); # find locations of 1's in species range k before extinction
+        new_range_e = Vector{Int}[]; # initialize the vector of vectors to store all possible new ranges after extinction
+        for l in 1:length(idx) # loop each location index with a species in range k
+            new_range_idx = copy(dict_keys_e[k])
+            new_range_idx[idx[l]] = 0 # indicates that extinction occurs in location idx[l] in species with range k
+            push!(new_range_e,new_range_idx) # append to possible range new range after extinction for species with range k
+        end
+        evt_e[dict_keys_e[k]] = new_range_e; # create dictionary for evt_e
+    end
+end
 
-# simulate
-do_simulation = true
-start_time = 0.0
-start_state = runif(1, 1, num_ranges)
+################################################
+# Dictionary for dispersal (evt_d)
+################################################
+# # key is range before dispersal, value indicates all possible ranges following a dispersal event 
+# evt_d = {
+#     (1,0,0):[(1,1,0),(1,0,1)],
+#     (0,1,0):[(1,1,0),(0,1,1)],
+#     (0,0,1):[(0,1,1),(0,1,1)],
+#     (1,1,0):[(1,1,1)],
+#     (1,0,1):[(1,1,1)],
+#     (0,1,1):[(1,1,1)],
+#     (1,1,1):[(,)]
+# }
+
+evt_d       = OrderedDict(); # Create an empty dictionary for dispersal
+dict_keys_d = copy(dict_keys); # keys field of the dictionary evt_d
+
+for k in 1:length(dict_keys_d)
+    if count(==(1),dict_keys_d[k])==num_regions # if the species is already widespread in all regions 
+        evt_d[dict_keys_d[k]] = [] # can't disperse
+    elseif count(==(1),dict_keys_d[k])!=num_regions # if the range is still < num_regions, can disperse
+        idx = findall(dict_keys_d[k].== 0 ); # find locations of all 0's in species with range k before dispersal
+        new_range_d = Vector{Int}[]; # intialize vector of vectors to store all possible new ranges following a dispersal of species with range k
+        for l in 1:length(idx) # loop each location index with a species in range k
+            new_range_idx = copy(dict_keys_d[k])
+            new_range_idx[idx[l]] = 1 # indicates that species dispersal to that location idx[l]
+            push!(new_range_d,new_range_idx) # append to possible range new range after extinction for species with range k
+        end
+        evt_d[dict_keys_d[k]] = new_range_d; # create dictionary for evt_d
+    end
+end
 
 
-while (do_simulation) {
+################################################
+# Dictionary for between-region speciation (evt_b)
+################################################
+# key indicate ancestral species range, value indicates all possible child ranges for one of the two children 
+# following the speciation event. List of all possible ranges of the other child can be computed using:
+# ancestral range - child range. E.g. ancestral = (1,1,0), child = (0,1,0). Then the other child is: 
+# (1,1,0) - (0,1,0) = (1,0,0)
+
+# evt_b = {
+#     (1,0,0):[(,)],
+#     (0,1,0):[(,)],
+#     (0,0,1):[(,)],
+#     (1,1,0):[(1,0,0)],
+#     (1,0,1):[(1,0,0)],
+#     (0,1,1):[(0,1,0)],
+#     (1,1,1):[(1,1,0),(1,0,1),(0,1,1)]
+# }
+
+evt_b       = OrderedDict(); # Create an empty dictionary for between-region speciation
+dict_keys_b = copy(dict_keys); # keys field of the dictionary evt_b
+
+for k in 1:length(dict_keys_b) # Looping over each ancestral species range in keys field 
+    if count(==(1),dict_keys_b[k])==1 # if the ancestral species is endemic, can't speciate 
+        evt_b[dict_keys_b[k]] = [] # then assign an empty vector for child range 
+    else # if the ancestral species is widespread, can speciate
+        anc_range_size = count(==(1),dict_keys_b[k]) # ancestral range size for index k in key field
+        # looping for each different size of child range after speciation.
+        # Divide by 2 because the range size of the other child can be derived from the range of the other one. 
+        for l in 1:round(Int64,anc_range_size)/2 
+            # TBA: add possibilities of all different splits of the child with range size l
+        end
+    end
+end 
+
+# # define rates for event space
+
+# # simulate
+# do_simulation = true
+# start_time = 0.0
+# start_state = runif(1, 1, num_ranges)
+
+
+# while (do_simulation) {
     
-    # draw time to next event
+#     # draw time to next event
     
-    # draw next event type
+#     # draw next event type
     
-    # update current simulation state
+#     # update current simulation state
     
-    # check if we stop simulation
-    if stop_condition == "time" and curr_time > max_time {
-        do_simulation = false
-    } else if stop_condition == "taxa" and curr_taxa > max_taxa {
-        do_simulation = false
-    }
+#     # check if we stop simulation
+#     if stop_condition == "time" and curr_time > max_time {
+#         do_simulation = false
+#     } else if stop_condition == "taxa" and curr_taxa > max_taxa {
+#         do_simulation = false
+#     }
     
-    # stop simulation if condition met
-    if (!do_simulation) {
-        break
-    }
+#     # stop simulation if condition met
+#     if (!do_simulation) {
+#         break
+#     }
     
-}
+# }
 
-# output
+# # output
 
-# write tree to file
+# # write tree to file
 
-# write ranges to file
+# # write ranges to file
 
-# write parameters to file
+# # write parameters to file
 
-# write summary statistics to file
+# # write summary statistics to file
