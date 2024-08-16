@@ -30,7 +30,7 @@ stop_condition = "time" # If time is the stopping condition
 #############
 # Define state space 
 num_regions = 3; # Number of regions 
-num_ranges  = 2^3 - 1; # Number of possible ranges given num_regions
+num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
 num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
 num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
 #################################################
@@ -187,7 +187,7 @@ end
 #     (1,1,0):[(1,0,0)],
 #     (1,0,1):[(1,0,0)],
 #     (0,1,1):[(0,1,0)],
-#     (1,1,1):[(1,1,0),(1,0,1),(0,1,1)]
+#     (1,1,1):[(1,0,0),(0,1,0),(0,0,1)]
 # }
 
 evt_b       = OrderedDict(); # Create an empty dictionary for between-region speciation
@@ -195,33 +195,38 @@ dict_keys_b = copy(dict_keys); # keys field of the dictionary evt_b
 
 for k in 1:length(dict_keys_b) # Looping over each ancestral species range in keys field 
     if count(==(1),dict_keys_b[k])==1 # if the ancestral species is endemic, can't speciate 
-        evt_b[dict_keys_b[k]] = [] # then assign an empty vector for child range 
+        evt_b[dict_keys_b[k]] = [] # then assign an empty vector for child range
+    # the special case when ancestral range of size 2, since we can only have 1|1 split. So, no need to iterate all permutations of (1,0,0,...) 
+    elseif count(==(1),dict_keys_b[k])==2 
+        idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k with size 2
+        child_range_b = zeros(Int64,num_regions); # Initialize vector of zeros 
+        child_range_b[idx_anc[1]] = 1; # Assign 1
+        evt_b[dict_keys_b[k]] = child_range_b;
     else # if the ancestral species is widespread, can speciate
         anc_range_size = count(==(1),dict_keys_b[k]) # ancestral range size for index k in key field
         # looping for each different size of child range after speciation.
         # Divide by 2 because the range size of the other child can be derived from the range of the other one. 
         idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k
         #
-        child_range_b = Vector{Int}[];
-        for l in 1:round(Int64,anc_range_size)/2 
-            # TBA: add possibilities for each different range split size of the child with range size l
-            #
-            child_init = zeros(Int64,num_regions); 
-            child_init[1:l] .= 1;
-            child_comb = unique(permutations(child_init));
-            for m in 1:length(child_comb)
+        child_range_b = Vector{Int}[]; # initialize vector of vectors to store all child ranges from ancestral range k 
+        for l in 1:floor.(Int64,anc_range_size/2) # loop over each range split size for the child range e.g. for k = 4, we can have split of size 1&2 (not including its compelement of size 3)
+            child_init = zeros(Int64,num_regions); # Initialize vector of zeros 
+            child_init[1:l] .= 1; # Assign 1's equal to the range split size 
+            child_comb = unique(permutations(child_init)); # permute all possibilities of combinations of 1's for that split size 
+            for m in 1:length(child_comb) # loop over this permutation 
                 idx_child = findall(child_comb[m].== 1 );
-                test_idx = [x in idx_anc for x = idx_child]
+                test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
                 if all(test_idx) == true
-                    push!(child_range_b,child_comb[m])
+                    push!(child_range_b,child_comb[m]) # If yes, then we accept that split of size l as a valid split
                 end
             end
         end
-        evt_b[dict_keys_b[k]] = child_range_b;
+        evt_b[dict_keys_b[k]] = child_range_b; # append keys and value fields to dictionary 
     end
 end 
-println(evt_b)
-xxx
+# println(evt_b)
+# println(length(evt_b))
+# xxx
 
 # # define rates for event space
 
