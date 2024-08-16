@@ -7,6 +7,7 @@
 using Combinatorics # Package for combinatorics/permutations
 using OrderedCollections # Package for ordering dictionary 
 using DataStructures # Package for preserving dictionary order by its insertion order 
+using Distributions # Package for using probability distributions 
 
 
 #############
@@ -32,7 +33,10 @@ stop_condition = "time" # If time is the stopping condition
 num_regions = 3; # Number of regions 
 num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
 num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
-num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
+# num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
+num_species_per_region = [1,0,0] # just for testing (remove later)
+# P.S. the entries for num_species_per_region and num_species_per_range will be updated at each time step
+
 #################################################
 # Create dictionary for region occupancy status (present/absent) and range labels
 #################################################
@@ -228,7 +232,34 @@ end
 # println(length(evt_b))
 # xxx
 
-# # define rates for event space
+###########################################
+# # Define rates for event space in each model variant 
+###########################################
+
+#########################
+# Rate function for within-region speciation 
+#########################
+
+# Rate function for density-independent within-region speciation
+
+function rate_w(base,region_ind,rate_scalar)
+    ## Error checking
+    @assert base > 0 "base rate must be positive" # base rate must be positive 
+    @assert region_ind in dict_values "region index must be <= num_ranges" # region ind must be element of dict_values (region labels)
+    n_i   = num_species_per_region[region_ind];  @assert n_i > 0 "number of species in region_ind must be > 0"
+    ## Define rate parameters 
+    rho_w = base # base rate 
+    w_d   = rate_scalar # rate scalar for within-region speciation
+    m_i_w = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+    ## Compute the overall rates
+    m_d_w = (log(n_i)+1)^(w_d)
+    ans   = base*m_i_w*m_d_w
+    return(ans)
+end
+# test = rate_w(0.1,1,0.1)
+# println(test)
+# xxx
+
 
 # # simulate
 # do_simulation = true
