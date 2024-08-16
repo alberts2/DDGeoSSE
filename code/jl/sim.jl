@@ -200,11 +200,28 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
         anc_range_size = count(==(1),dict_keys_b[k]) # ancestral range size for index k in key field
         # looping for each different size of child range after speciation.
         # Divide by 2 because the range size of the other child can be derived from the range of the other one. 
+        idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k
+        #
+        child_range_b = Vector{Int}[];
         for l in 1:round(Int64,anc_range_size)/2 
-            # TBA: add possibilities of all different splits of the child with range size l
+            # TBA: add possibilities for each different range split size of the child with range size l
+            #
+            child_init = zeros(Int64,num_regions); 
+            child_init[1:l] .= 1;
+            child_comb = unique(permutations(child_init));
+            for m in 1:length(child_comb)
+                idx_child = findall(child_comb[m].== 1 );
+                test_idx = [x in idx_anc for x = idx_child]
+                if all(test_idx) == true
+                    push!(child_range_b,child_comb[m])
+                end
+            end
         end
+        evt_b[dict_keys_b[k]] = child_range_b;
     end
 end 
+println(evt_b)
+xxx
 
 # # define rates for event space
 
