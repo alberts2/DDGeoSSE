@@ -241,7 +241,7 @@ end
 # Rate function for within-region speciation 
 #########################
 
-function rate_w(base,region_ind,rate_scalar)
+function rate_w(base,region_ind,rate_scalar,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
@@ -251,12 +251,16 @@ function rate_w(base,region_ind,rate_scalar)
     w_d   = rate_scalar # rate scalar for within-region speciation
     m_i_w = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
     ## Compute the overall rates
-    m_d_w = (log(n_i)+1)^(w_d)
+    if model == "log"
+        m_d_w = (log(n_i)+1)^(w_d)
+    elseif model == "standard"
+        m_d_w = n_i^w_d
+    end
     ans   = rho_w*m_i_w*m_d_w
     return(ans)
 end
 # num_species_per_region = [1,0,0] # just for testing (remove later)
-# test = rate_w(0.1,0,0.1)
+# test = rate_w(0.1,1,0.1,"log")
 # println(test)
 # xxx
 
@@ -264,7 +268,7 @@ end
 # Rate function for extinction
 #########################
 
-function rate_e(base,region_ind,rate_scalar)
+function rate_e(base,region_ind,rate_scalar,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
@@ -274,7 +278,11 @@ function rate_e(base,region_ind,rate_scalar)
     e_d   = rate_scalar # rate scalar for extinction
     m_i_e = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
     ## Compute the overall rates
-    m_d_e = (log(n_i)+1)^(e_d)
+    if model == "log"
+        m_d_e = (log(n_i)+1)^(e_d)
+    elseif model == "standard"
+        m_d_e = n_i^e_d
+    end
     ans   = rho_e*m_i_e*m_d_e
     return(ans)
 end
@@ -283,7 +291,7 @@ end
 # Rate function for dispersal 
 #########################
 
-function rate_d(base,home_ind,away_ind,home_scalar,away_scalar)
+function rate_d(base,home_ind,away_ind,home_scalar,away_scalar,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert home_ind <= num_regions && home_ind > 0 "home region index must be in {1,2,...,num_regions}" # home_ind must be <= num_regions
@@ -298,7 +306,11 @@ function rate_d(base,home_ind,away_ind,home_scalar,away_scalar)
     d_d_away   = away_scalar # rate scalar in away region
     m_i_d      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
     ## Compute the overall rates
-    m_d_d      = (log(n_i)+1)^d_d_home + (log(n_j+1)+1)^d_d_away
+    if model == "log"
+        m_d_d  = (log(n_i)+1)^d_d_home + (log(n_j+1)+1)^d_d_away
+    elseif model == "standard"
+        m_d_d  = (n_i^d_d_home)*(n_j+1)^d_d_away
+    end
     ans   = rho_d*m_i_d*m_d_d
     return(ans)
 end
@@ -312,7 +324,7 @@ end
 
 # format for left_range/right_range follows the keys field in dict_keys_b (e.g. [1,0,1] to represent range AC)
 
-function rate_b(base,left_range,right_range,rate_scalar)
+function rate_b(base,left_range,right_range,rate_scalar,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert left_range + right_range in dict_keys_b "Not a valid split" # left and right ranges must be derived from an ancestral range in dict_keys_b
@@ -331,8 +343,13 @@ function rate_b(base,left_range,right_range,rate_scalar)
     f = 0 # initialize the range score for left_range|right_range split 
     for i in 1:length(idx_leftrange)
         for j in 1:length(idx_rightrange)
-            m_b_d_ij = (log(num_species_per_region[idx_leftrange[i]]*num_species_per_region[idx_rightrange[j]])+1)^b_d
-            m_b_d_ji = (log(num_species_per_region[idx_leftrange[j]]*num_species_per_region[idx_rightrange[i]])+1)^b_d
+            if model == "log"
+                m_b_d_ij = (log(num_species_per_region[idx_leftrange[i]]*num_species_per_region[idx_rightrange[j]])+1)^b_d
+                m_b_d_ji = (log(num_species_per_region[idx_leftrange[j]]*num_species_per_region[idx_rightrange[i]])+1)^b_d
+            elseif model == "standard"
+                m_b_d_ij = (num_species_per_region[idx_leftrange[i]]+num_species_per_region[idx_rightrange[j]]-1)^b_d
+                m_b_d_ji = (num_species_per_region[idx_leftrange[j]]+num_species_per_region[idx_rightrange[i]]-1)^b_d
+            end
             f += 2/(m_b_d_ij + m_b_d_ji) # update f
         end
     end
@@ -349,7 +366,7 @@ end
 # left_range  = [1,1,0,0]
 # right_range = [0,0,1,1]
 # num_species_per_region = [2,3,4,5]
-# test = rate_b(1,left_range,right_range,1) # should be equal with rate_b(1,right_range,left_range,1)
+# test = rate_b(1,left_range,right_range,1,"log") # should be equal with rate_b(1,right_range,left_range,1)
 # println(test)
 # xxxx
 
