@@ -1,5 +1,5 @@
 # This script will simulate phylogenetic datasets under a 
-# density-dependendent GeoSSE model.
+# density-dependent GeoSSE model.
 
 #####################
 # Load julia packages
@@ -30,12 +30,12 @@ stop_condition = "time" # If time is the stopping condition
 # Model setup
 #############
 # Define state space 
-num_regions = 3; # Number of regions 
+num_regions = 4; # Number of regions 
 num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
 num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
-# num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
-num_species_per_region = [1,0,0] # just for testing (remove later)
+num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
 # P.S. the entries for num_species_per_region and num_species_per_range will be updated at each time step
+# since rates only depend on n_i at the current time, not past times. 
 
 #################################################
 # Create dictionary for region occupancy status (present/absent) and range labels
@@ -228,6 +228,7 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
         evt_b[dict_keys_b[k]] = child_range_b; # append keys and value fields to dictionary 
     end
 end 
+
 # println(evt_b)
 # println(length(evt_b))
 # xxx
@@ -240,12 +241,10 @@ end
 # Rate function for within-region speciation 
 #########################
 
-# Rate function for density-independent within-region speciation
-
 function rate_w(base,region_ind,rate_scalar)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
-    @assert region_ind in dict_values "region index must be <= num_ranges" # region ind must be element of dict_values (region labels)
+    @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
     n_i   = num_species_per_region[region_ind];  @assert n_i > 0 "number of species in region_ind must be > 0"
     ## Define rate parameters 
     rho_w = base # base rate 
@@ -253,16 +252,112 @@ function rate_w(base,region_ind,rate_scalar)
     m_i_w = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
     ## Compute the overall rates
     m_d_w = (log(n_i)+1)^(w_d)
-    ans   = base*m_i_w*m_d_w
+    ans   = rho_w*m_i_w*m_d_w
     return(ans)
 end
-# test = rate_w(0.1,1,0.1)
+# num_species_per_region = [1,0,0] # just for testing (remove later)
+# test = rate_w(0.1,0,0.1)
 # println(test)
 # xxx
 
+#########################
+# Rate function for extinction
+#########################
 
-# # simulate
-# do_simulation = true
+function rate_e(base,region_ind,rate_scalar)
+    ## Error checking
+    @assert base > 0 "base rate must be positive" # base rate must be positive 
+    @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
+    n_i   = num_species_per_region[region_ind];  @assert n_i > 0 "number of species in region_ind must be > 0"
+    ## Define rate parameters 
+    rho_e = base # base rate 
+    e_d   = rate_scalar # rate scalar for extinction
+    m_i_e = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+    ## Compute the overall rates
+    m_d_e = (log(n_i)+1)^(e_d)
+    ans   = rho_e*m_i_e*m_d_e
+    return(ans)
+end
+
+#########################
+# Rate function for dispersal 
+#########################
+
+function rate_d(base,home_ind,away_ind,home_scalar,away_scalar)
+    ## Error checking
+    @assert base > 0 "base rate must be positive" # base rate must be positive 
+    @assert home_ind <= num_regions && home_ind > 0 "home region index must be in {1,2,...,num_regions}" # home_ind must be <= num_regions
+    @assert away_ind <= num_regions && away_ind > 0 "away region index must be in {1,2,...,num_regions}" # away_ind must be <= num_regions
+    @assert home_ind != away_ind "home region index cannot be equal to away region index"
+    #
+    n_i   = num_species_per_region[home_ind]; @assert n_i > 0 "number of species in home_ind must be > 0"
+    n_j   = num_species_per_region[away_ind]; @assert n_j >= 0 "number of species in away_ind must be >= 0"
+    ## Define rate parameters 
+    rho_d      = base # base rate 
+    d_d_home   = home_scalar # rate scalar in home region
+    d_d_away   = away_scalar # rate scalar in away region
+    m_i_d      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+    ## Compute the overall rates
+    m_d_d      = (log(n_i)+1)^d_d_home + (log(n_j+1)+1)^d_d_away
+    ans   = rho_d*m_i_d*m_d_d
+    return(ans)
+end
+
+#########################
+# Rate function for between-region speciation
+#########################
+
+# P.S. the range score function already has a factor of 1/2 to take into account
+# left or right children orientation. 
+
+# format for left_range/right_range follows the keys field in dict_keys_b (e.g. [1,0,1] to represent range AC)
+
+function rate_b(base,left_range,right_range,rate_scalar)
+    ## Error checking
+    @assert base > 0 "base rate must be positive" # base rate must be positive 
+    @assert left_range + right_range in dict_keys_b "Not a valid split" # left and right ranges must be derived from an ancestral range in dict_keys_b
+    @assert left_range != right_range "left and right ranges cannot be equal" # left and right child ranges must be different
+    #
+    idx_leftrange  = findall(left_range .==1)  # find index of every region that are occupied by the species that forms left range 
+    idx_rightrange = findall(right_range .==1) # find index of every region that are occupied by the species that forms right range 
+    @assert all(x->x>0,num_species_per_region[idx_leftrange]) "no species with that given left range" # the number of species with that left range must be > 0
+    @assert all(x->x>0,num_species_per_region[idx_rightrange]) "no species with that given right range" # the number of species with that right range must be > 0
+    ## Define rate parameters 
+    rho_b      = base # base rate 
+    b_d        = rate_scalar # rate scalar 
+    m_i_b      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+    # m_i_b      = 1 # draw density-independent rate randomly [0.01,1]
+    ## Compute the range split score f
+    f = 0 # initialize the range score for left_range|right_range split 
+    for i in 1:length(idx_leftrange)
+        for j in 1:length(idx_rightrange)
+            m_b_d_ij = (log(num_species_per_region[idx_leftrange[i]]*num_species_per_region[idx_rightrange[j]])+1)^b_d
+            m_b_d_ji = (log(num_species_per_region[idx_leftrange[j]]*num_species_per_region[idx_rightrange[i]])+1)^b_d
+            f += 2/(m_b_d_ij + m_b_d_ji) # update f
+        end
+    end
+    f = 1/f
+    ## Compute the overall rates
+    ans   = rho_b*m_i_b*f
+    return(ans)
+end
+
+# # Example of non-valid split
+# left_range  = [1,1,0,0]
+# right_range = [0,1,0,1]
+# # Example of valid split
+# left_range  = [1,1,0,0]
+# right_range = [0,0,1,1]
+# num_species_per_region = [2,3,4,5]
+# test = rate_b(1,left_range,right_range,1) # should be equal with rate_b(1,right_range,left_range,1)
+# println(test)
+# xxxx
+
+###########################################
+# # Simulate events on tree
+###########################################
+
+do_simulation = true; # Initial flag to continue simulating events 
 # start_time = 0.0
 # start_state = runif(1, 1, num_ranges)
 
