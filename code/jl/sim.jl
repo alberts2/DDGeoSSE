@@ -17,7 +17,7 @@ base_dir = "~/projects/density_geosse";
 out_dir  = base_dir*"/output";
 
 ################
-# Intial setting
+# Initial setting
 ################
 min_taxa       = 5; # Minimum number of extant taxa to simulate 
 max_taxa       = 100; # Maximum number of extant taxa to simulate
@@ -30,7 +30,8 @@ stop_condition = "time" # If time is the stopping condition
 # Model setup
 #############
 # Define state space 
-num_regions = 4; # Number of regions 
+# num_regions = 4; # Number of regions 
+num_regions = 3; # Number of regions 
 num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
 num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
 num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
@@ -205,7 +206,8 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
         idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k with size 2
         child_range_b = zeros(Int64,num_regions); # Initialize vector of zeros 
         child_range_b[idx_anc[1]] = 1; # Assign 1
-        evt_b[dict_keys_b[k]] = child_range_b;
+        # evt_b[dict_keys_b[k]] = child_range_b;
+        evt_b[dict_keys_b[k]] = [child_range_b];
     else # if the ancestral species is widespread, can speciate
         anc_range_size = count(==(1),dict_keys_b[k]) # ancestral range size for index k in key field
         # looping for each different size of child range after speciation.
@@ -230,6 +232,8 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
 end 
 
 # println(evt_b)
+# println(evt_b[[1,1,1,0]])
+# println([1,1,1,0]-evt_b[[1,1,1,0]][1])
 # println(length(evt_b))
 # xxx
 
@@ -245,18 +249,22 @@ function rate_w(base,region_ind,rate_scalar,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
-    n_i   = num_species_per_region[region_ind];  @assert n_i > 0 "number of species in region_ind must be > 0"
-    ## Define rate parameters 
-    rho_w = base # base rate 
-    w_d   = rate_scalar # rate scalar for within-region speciation
-    m_i_w = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
-    ## Compute the overall rates
-    if model == "log"
-        m_d_w = (log(n_i)+1)^(w_d)
-    elseif model == "standard"
-        m_d_w = n_i^w_d
+    n_i   = num_species_per_region[region_ind] # Number of species currently in region_ind
+    if n_i == 0
+        ans = 0 # rate equals 0 if no species 
+    else
+        ## Define rate parameters 
+        rho_w = base # base rate 
+        w_d   = rate_scalar # rate scalar for within-region speciation
+        m_i_w = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        ## Compute the overall rates
+        if model == "log"
+            m_d_w = (log(n_i)+1)^(w_d)
+        elseif model == "standard"
+            m_d_w = n_i^w_d
+        end
+        ans   = rho_w*m_i_w*m_d_w
     end
-    ans   = rho_w*m_i_w*m_d_w
     return(ans)
 end
 # num_species_per_region = [1,0,0] # just for testing (remove later)
@@ -272,18 +280,22 @@ function rate_e(base,region_ind,rate_scalar,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
-    n_i   = num_species_per_region[region_ind];  @assert n_i > 0 "number of species in region_ind must be > 0"
-    ## Define rate parameters 
-    rho_e = base # base rate 
-    e_d   = rate_scalar # rate scalar for extinction
-    m_i_e = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
-    ## Compute the overall rates
-    if model == "log"
-        m_d_e = (log(n_i)+1)^(e_d)
-    elseif model == "standard"
-        m_d_e = n_i^e_d
+    n_i   = num_species_per_region[region_ind] # Number of species currently in region_ind
+    if n_i == 0
+        ans = 0 # rate equals 0 if no species 
+    else # if there is species 
+        ## Define rate parameters 
+        rho_e = base # base rate 
+        e_d   = rate_scalar # rate scalar for extinction
+        m_i_e = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        ## Compute the overall rates
+        if model == "log"
+            m_d_e = (log(n_i)+1)^(e_d)
+        elseif model == "standard"
+            m_d_e = n_i^e_d
+        end
+        ans   = rho_e*m_i_e*m_d_e
     end
-    ans   = rho_e*m_i_e*m_d_e
     return(ans)
 end
 
@@ -297,21 +309,25 @@ function rate_d(base,home_ind,away_ind,home_scalar,away_scalar,model)
     @assert home_ind <= num_regions && home_ind > 0 "home region index must be in {1,2,...,num_regions}" # home_ind must be <= num_regions
     @assert away_ind <= num_regions && away_ind > 0 "away region index must be in {1,2,...,num_regions}" # away_ind must be <= num_regions
     @assert home_ind != away_ind "home region index cannot be equal to away region index"
-    #
-    n_i   = num_species_per_region[home_ind]; @assert n_i > 0 "number of species in home_ind must be > 0"
+    n_i   = num_species_per_region[home_ind]
     n_j   = num_species_per_region[away_ind]; @assert n_j >= 0 "number of species in away_ind must be >= 0"
-    ## Define rate parameters 
-    rho_d      = base # base rate 
-    d_d_home   = home_scalar # rate scalar in home region
-    d_d_away   = away_scalar # rate scalar in away region
-    m_i_d      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
-    ## Compute the overall rates
-    if model == "log"
-        m_d_d  = (log(n_i)+1)^d_d_home + (log(n_j+1)+1)^d_d_away
-    elseif model == "standard"
-        m_d_d  = (n_i^d_d_home)*(n_j+1)^d_d_away
+    #
+    if n_i == 0
+        ans = 0 # rate equals 0 if no species in home region
+    else
+        ## Define rate parameters 
+        rho_d      = base # base rate 
+        d_d_home   = home_scalar # rate scalar in home region
+        d_d_away   = away_scalar # rate scalar in away region
+        m_i_d      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        ## Compute the overall rates
+        if model == "log"
+            m_d_d  = (log(n_i)+1)^d_d_home + (log(n_j+1)+1)^d_d_away
+        elseif model == "standard"
+            m_d_d  = (n_i^d_d_home)*(n_j+1)^d_d_away
+        end
+        ans   = rho_d*m_i_d*m_d_d
     end
-    ans   = rho_d*m_i_d*m_d_d
     return(ans)
 end
 
@@ -332,30 +348,35 @@ function rate_b(base,left_range,right_range,rate_scalar,model)
     #
     idx_leftrange  = findall(left_range .==1)  # find index of every region that are occupied by the species that forms left range 
     idx_rightrange = findall(right_range .==1) # find index of every region that are occupied by the species that forms right range 
-    @assert all(x->x>0,num_species_per_region[idx_leftrange]) "no species with that given left range" # the number of species with that left range must be > 0
-    @assert all(x->x>0,num_species_per_region[idx_rightrange]) "no species with that given right range" # the number of species with that right range must be > 0
-    ## Define rate parameters 
-    rho_b      = base # base rate 
-    b_d        = rate_scalar # rate scalar 
-    m_i_b      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
-    # m_i_b      = 1 # draw density-independent rate randomly [0.01,1]
-    ## Compute the range split score f
-    f = 0 # initialize the range score for left_range|right_range split 
-    for i in 1:length(idx_leftrange)
-        for j in 1:length(idx_rightrange)
-            if model == "log"
-                m_b_d_ij = (log(num_species_per_region[idx_leftrange[i]]*num_species_per_region[idx_rightrange[j]])+1)^b_d
-                m_b_d_ji = (log(num_species_per_region[idx_leftrange[j]]*num_species_per_region[idx_rightrange[i]])+1)^b_d
-            elseif model == "standard"
-                m_b_d_ij = (num_species_per_region[idx_leftrange[i]]+num_species_per_region[idx_rightrange[j]]-1)^b_d
-                m_b_d_ji = (num_species_per_region[idx_leftrange[j]]+num_species_per_region[idx_rightrange[i]]-1)^b_d
+    # @assert all(x->x>0,num_species_per_region[idx_leftrange]) "no species with that given left range" # the number of species with that left range must be > 0
+    # @assert all(x->x>0,num_species_per_region[idx_rightrange]) "no species with that given right range" # the number of species with that right range must be > 0
+    #
+    if any(num_species_per_region[idx_leftrange].==0) == true || any(num_species_per_region[idx_rightrange].==0) == true 
+        ans = 0 # if no species in the regions that form either left range or right range, rate = 0
+    else
+        ## Define rate parameters 
+        rho_b      = base # base rate 
+        b_d        = rate_scalar # rate scalar 
+        m_i_b      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        # m_i_b      = 1 # draw density-independent rate randomly [0.01,1]
+        ## Compute the range split score f
+        f = 0 # initialize the range score for left_range|right_range split 
+        for i in 1:length(idx_leftrange)
+            for j in 1:length(idx_rightrange)
+                if model == "log"
+                    m_b_d_ij = (log(num_species_per_region[idx_leftrange[i]]*num_species_per_region[idx_rightrange[j]])+1)^b_d
+                    m_b_d_ji = (log(num_species_per_region[idx_leftrange[j]]*num_species_per_region[idx_rightrange[i]])+1)^b_d
+                elseif model == "standard"
+                    m_b_d_ij = (num_species_per_region[idx_leftrange[i]]+num_species_per_region[idx_rightrange[j]]-1)^b_d
+                    m_b_d_ji = (num_species_per_region[idx_leftrange[j]]+num_species_per_region[idx_rightrange[i]]-1)^b_d
+                end
+                f += 2/(m_b_d_ij + m_b_d_ji) # update f
             end
-            f += 2/(m_b_d_ij + m_b_d_ji) # update f
         end
+        f = 1/f
+        ## Compute the overall rates
+        ans   = rho_b*m_i_b*f
     end
-    f = 1/f
-    ## Compute the overall rates
-    ans   = rho_b*m_i_b*f
     return(ans)
 end
 
@@ -374,32 +395,105 @@ end
 # # Simulate events on tree
 ###########################################
 
-do_simulation = true; # Initial flag to continue simulating events 
-# start_time = 0.0
-# start_state = runif(1, 1, num_ranges)
+do_simulation                      = true; # Initial flag to continue simulating events 
+start_time                         = 0.0; # Start time of the simulation
+start_range                        = floor(Int64,rand(Uniform(1,num_ranges))) # Starting range state at root node 
+num_alive_lineage                  = 1; # Start with one species (stem branch)
 
+# base rates 
+rho_w = rand(Uniform(0.01,1));
+rho_e = rand(Uniform(0.01,1));
+rho_d = rand(Uniform(0.01,1));
+rho_b = rand(Uniform(0.01,1));
 
-# while (do_simulation) {
-    
-#     # draw time to next event
-    
+# rate scalars
+w_d      = rand(Uniform(-1,1))
+e_d      = rand(Uniform(-1,1))
+d_d_home = rand(Uniform(-1,1))
+d_d_away = rand(Uniform(-1,1))
+b_d      = rand(Uniform(-1,1))
+
+# model
+model    = "log"
+
+# At root node
+num_species_per_range[start_range]      = 1;
+range_key_root                          = [k for (k,v) in ranges_inv if v==start_range]; #range key that correspond to range label at the root
+reg_idx_root                            = findall(range_key_root[1] .==1 ); # find the region indexes that correspond to that range at the root 
+num_species_per_region[reg_idx_root]    .= 1; # update the number of species currently alive in each region 
+# println(start_range)
+# println(range_key_root)
+# println(reg_idx_root)
+# println(num_species_per_region)
+
+## Aug 20: Tested loop for computing total sum of rates across all ranges. 
+
+# while do_simulation == true 
+    #############################################
+    # # get total sum of rates given the number of currently alive lineages
+    #############################################
+    w_total = 0 # initialize total sum of rates from within-region speciation
+    e_total = 0 # initialize total sum of rates from extinction
+    d_total = 0 # initialize total sum of rates from dispersal
+    b_total = 0 # initialize total sum of rates from between-region speciation
+    for i in 1:num_ranges # loop over each range (total sum of rates = N_A*r_A + ...+ N_ABC*r_ABC)
+        range_key = [k for (k,v) in ranges_inv if v==i] # find range that correspond to range label i e.g. [[1,0,0]] for i = 1
+        reg_idx   = findall(range_key[1] .==1 ) # find region indexes correspond to that range e.g. reg_idx = 1 for range [1,0,0]
+        #
+        reg_away  = setdiff([1:1:num_regions;],reg_idx) # find all possible regions for dispersing for species with range i
+        for j in 1:length(reg_idx) # for region-specific rates
+            global w_total += rate_w(rho_w,reg_idx[j],w_d,model) # e.g. for range {A,B}, w_{A,B} = w_A + w_B
+            global e_total += rate_e(rho_e,reg_idx[j],e_d,model) # e.g. for range {A,B}, e_{A,B} = e_A + e_B 
+            #
+            if reg_away != Int64[] # if the species in range i is not already widespread in all regions 
+                for k in 1:length(reg_away)
+                    global d_total += rate_d(rho_d,reg_idx[j],reg_away[k],d_d_home,d_d_away,model) #e.g. for range {A,B}, d_AB_j = d_A_C + d_B_C
+                end
+            else
+                global d_total += 0  # if already widepread in all regions
+            end
+        end
+        #
+        if count(==(1),range_key[1])==1 # e.g. if range_key = [[1,0,0]], then can't have between-region speciation
+            global b_total += 0
+        else
+            num_left_splits = length(evt_b[range_key[1]])
+            for k in 1:num_left_splits # e.g. for range {A,B,C}, can have left range = {A,B} or left_range = {A}
+                left_range  = evt_b[range_key[1]][k] 
+                right_range = range_key[1] - left_range
+                global b_total += 2*rate_b(rho_b,left_range,right_range,b_d,model) # 2 is there because {A}|{B} == {B}|{A}
+            end
+        end
+    end
+    # println(w_total)
+    # println(e_total)
+    # println(d_total)
+    # println(b_total)
+    # xxxx
+
+#     #############################################
+#     # # draw time to next event
+#     #############################################
+#     wait_time = rand(Exponential(1/2),1)
 #     # draw next event type
+
+#     # assign the next event type to a particular alive lineage
     
 #     # update current simulation state
     
 #     # check if we stop simulation
-#     if stop_condition == "time" and curr_time > max_time {
+#     if stop_condition == "time" and curr_time > max_time  # if condition on max_time
 #         do_simulation = false
-#     } else if stop_condition == "taxa" and curr_taxa > max_taxa {
+#     elseif stop_condition == "taxa" and curr_taxa > max_taxa # if condition on max_taxa
 #         do_simulation = false
-#     }
+#     end
     
 #     # stop simulation if condition met
-#     if (!do_simulation) {
+#     if do_simulation == false 
 #         break
-#     }
+#     end
     
-# }
+# end
 
 # # output
 
