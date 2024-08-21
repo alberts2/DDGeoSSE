@@ -9,7 +9,7 @@ using OrderedCollections # Package for ordering dictionary
 using DataStructures # Package for preserving dictionary order by its insertion order 
 using Distributions # Package for using probability distributions 
 using DataFrames # Package for dataframe
-using Missings # Package to assign missing values (NA)
+# using Missings # Package to assign missing values (NA)
 
 
 #############
@@ -434,8 +434,8 @@ curr_time = start_time; # Initialize current time of simulation
 history_df = DataFrame(parent_state = Int64[],event_type = String[],
                        left_child_state = Int64[],right_child_state = Int64[],
                        branch_length = Float64[],current_time = Float64[]) # dataframe to store history of events and information during simulation
-# add first event at the root node (Note: there is bug still)
-# push!(history_df,(start_range,"root",missings(Int64,1)[1],missings(Int64,1)[1],0,curr_time))
+# add first event at the root node 
+push!(history_df,(start_range,"root",0,0,0,curr_time)) # P.S. left_child_state = right_child_state = 0 means it is a non-speciation event 
 # println("example df = ",history_df)
 # xxx
 
