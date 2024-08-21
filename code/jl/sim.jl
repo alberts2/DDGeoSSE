@@ -8,6 +8,8 @@ using Combinatorics # Package for combinatorics/permutations
 using OrderedCollections # Package for ordering dictionary 
 using DataStructures # Package for preserving dictionary order by its insertion order 
 using Distributions # Package for using probability distributions 
+using DataFrames # Package for dataframe
+using Missings # Package to assign missing values (NA)
 
 
 #############
@@ -396,7 +398,7 @@ end
 ###########################################
 
 do_simulation                      = true; # Initial flag to continue simulating events 
-start_time                         = 0.0; # Start time of the simulation
+start_time                         = 0.0; # Start time of the simulation (0 = past time)
 start_range                        = floor(Int64,rand(Uniform(1,num_ranges))) # Starting range state at root node 
 num_alive_lineage                  = 1; # Start with one species (stem branch)
 
@@ -428,6 +430,15 @@ num_species_per_region[reg_idx_root]    .= 1; # update the number of species cur
 
 ## Aug 20: Tested loop for computing total sum of rates across all ranges. 
 curr_time = start_time; # Initialize current time of simulation 
+#
+history_df = DataFrame(parent_state = Int64[],event_type = String[],
+                       left_child_state = Int64[],right_child_state = Int64[],
+                       branch_length = Float64[],current_time = Float64[]) # dataframe to store history of events and information during simulation
+# add first event at the root node (Note: there is bug still)
+# push!(history_df,(start_range,"root",missings(Int64,1)[1],missings(Int64,1)[1],0,curr_time))
+# println("example df = ",history_df)
+# xxx
+
 # while do_simulation == true 
     #############################################
     # # get total sum of rates given the number of currently alive lineages
