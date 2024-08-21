@@ -427,7 +427,7 @@ num_species_per_region[reg_idx_root]    .= 1; # update the number of species cur
 # println(num_species_per_region)
 
 ## Aug 20: Tested loop for computing total sum of rates across all ranges. 
-
+curr_time = start_time; # Initialize current time of simulation 
 # while do_simulation == true 
     #############################################
     # # get total sum of rates given the number of currently alive lineages
@@ -465,21 +465,69 @@ num_species_per_region[reg_idx_root]    .= 1; # update the number of species cur
             end
         end
     end
+    total_rate = sum(num_species_per_range)*(w_total+e_total+d_total+b_total) # total sum of rates across ranges 
     # println(w_total)
     # println(e_total)
     # println(d_total)
     # println(b_total)
     # xxxx
 
-#     #############################################
-#     # # draw time to next event
-#     #############################################
-#     wait_time = rand(Exponential(1/2),1)
-#     # draw next event type
+    #############################################
+    # # draw time to next event
+    #############################################
+    wait_time = rand(Exponential(1/total_rate),1)[1] # draw waiting time till a next event 
+    global curr_time += wait_time # update current time 
+    # println(wait_time)
 
-#     # assign the next event type to a particular alive lineage
+    # # draw next event type
+    prob_w   = w_total/total_rate # probability that the next event is within-region speciation
+    prob_e   = e_total/total_rate # probability that the next event is extinction 
+    prob_d   = d_total/total_rate # probability that the next event is dispersal 
+    prob_b   = b_total/total_rate # probability that the next event is between-region speciation 
+    #
+    rand_num = 10 # some random big number to initiate the while loop 
+    while all([prob_w,prob_e,prob_d,prob_b].<rand_num) == true # keep re-drawing the random number until we get a valid one. Is this correct?
+        global rand_num = rand(Uniform(0,1)) # draw random number within [0,1] uniformly 
+    end
+    #
+    if rand_num <= prob_w && prob_w == max(prob_w,prob_e,prob_d,prob_b) && any(num_species_per_range.!=0) == true # if next event is within-reg spec and there's alive species with some ranges
+        curr_event = "within-region" # assign next event to be within-region speciation 
+    elseif rand_num <= prob_e  && prob_e == max(prob_w,prob_e,prob_d,prob_b) && any(num_species_per_range.!=0) == true # if next event is extinction and there's alive species with some ranges
+        curr_event = "extinction" # assign next event to be extinction
+    elseif rand_num <= prob_d  && prob_d == max(prob_w,prob_e,prob_d,prob_b) && any(num_species_per_range[1:end-1].!=0) == true # check not including the last entry in num_species_per_range because that species cannot disperse
+        curr_event = "dispersal" # assign the next event to be dispersal
+    elseif rand_num <= prob_b  && prob_b == max(prob_w,prob_e,prob_d,prob_b) && any(num_species_per_range[num_regions+1:end].!=0) == true # check not including the first num_regions entries because species have range size 1 (can't speciate between region)
+        curr_event = "between-region" # assign the next event to be between-region 
+    end
+    # # Aug 21: works as intended 
+    # println("random number = ",rand_num)
+    # println("prob w = ",prob_w)
+    # println("prob e = ",prob_e)
+    # println("prob d = ",prob_d)
+    # println("prob b = ",prob_b)
+    # println("num species range = ",num_species_per_range)
+    # println("current event = ",curr_event)
+
+    #############################################
+    # # assign the next event type to a particular alive lineage
+    #############################################
+
+    # if curr_event == "within-region"
+    #     # ..... choose which lineage
+    # elseif curr_event == "extinction"
+    #     # .... choose which lineage
+    #     if size == 1
+    #         curr_event == "lineage extinction"
+    #     elseif size != 1
+    #         curr_event == "local extinction"
+    #     end
+    # elseif curr_event == "dispersal"
+    #     # .... choose which lineage
+    # elseif curr_event == "between-region"
+    #     # .... choose which lineage
+    # end
     
-#     # update current simulation state
+#     # update current simulation state and record parent-child-event_type (use dataframe?)
     
 #     # check if we stop simulation
 #     if stop_condition == "time" and curr_time > max_time  # if condition on max_time
