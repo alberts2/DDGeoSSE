@@ -112,6 +112,8 @@ for k in 1:length(dict_keys_w)
         evt_w[dict_keys_w[k]] = child_range_w; # create dictionary for evt_w
     end
 end
+# println(evt_w)
+# xxxx
 
 ################################################
 # Dictionary for extinction (evt_e)
@@ -200,16 +202,42 @@ end
 evt_b       = OrderedDict(); # Create an empty dictionary for between-region speciation
 dict_keys_b = copy(dict_keys); # keys field of the dictionary evt_b
 
+# for k in 1:length(dict_keys_b) # Looping over each ancestral species range in keys field 
+#     if count(==(1),dict_keys_b[k])==1 # if the ancestral species is endemic, can't speciate 
+#         evt_b[dict_keys_b[k]] = [] # then assign an empty vector for child range
+#     # the special case when ancestral range of size 2, since we can only have 1|1 split. So, no need to iterate all permutations of (1,0,0,...) 
+#     elseif count(==(1),dict_keys_b[k])==2 
+#         idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k with size 2
+#         child_range_b = zeros(Int64,num_regions); # Initialize vector of zeros 
+#         child_range_b[idx_anc[1]] = 1; # Assign 1
+#         # evt_b[dict_keys_b[k]] = child_range_b;
+#         evt_b[dict_keys_b[k]] = [child_range_b];
+#     else # if the ancestral species is widespread, can speciate
+#         anc_range_size = count(==(1),dict_keys_b[k]) # ancestral range size for index k in key field
+#         # looping for each different size of child range after speciation.
+#         # Divide by 2 because the range size of the other child can be derived from the range of the other one. 
+#         idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k
+#         #
+#         child_range_b = Vector{Int}[]; # initialize vector of vectors to store all child ranges from ancestral range k 
+#         for l in 1:floor.(Int64,anc_range_size/2) # loop over each range split size for the child range e.g. for k = 4, we can have split of size 1&2 (not including its compelement of size 3)
+#             child_init = zeros(Int64,num_regions); # Initialize vector of zeros 
+#             child_init[1:l] .= 1; # Assign 1's equal to the range split size 
+#             child_comb = unique(permutations(child_init)); # permute all possibilities of combinations of 1's for that split size 
+#             for m in 1:length(child_comb) # loop over this permutation 
+#                 idx_child = findall(child_comb[m].== 1 );
+#                 test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
+#                 if all(test_idx) == true
+#                     push!(child_range_b,child_comb[m]) # If yes, then we accept that split of size l as a valid split
+#                 end
+#             end
+#         end
+#         evt_b[dict_keys_b[k]] = child_range_b; # append keys and value fields to dictionary 
+#     end
+# end 
+
 for k in 1:length(dict_keys_b) # Looping over each ancestral species range in keys field 
     if count(==(1),dict_keys_b[k])==1 # if the ancestral species is endemic, can't speciate 
         evt_b[dict_keys_b[k]] = [] # then assign an empty vector for child range
-    # the special case when ancestral range of size 2, since we can only have 1|1 split. So, no need to iterate all permutations of (1,0,0,...) 
-    elseif count(==(1),dict_keys_b[k])==2 
-        idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k with size 2
-        child_range_b = zeros(Int64,num_regions); # Initialize vector of zeros 
-        child_range_b[idx_anc[1]] = 1; # Assign 1
-        # evt_b[dict_keys_b[k]] = child_range_b;
-        evt_b[dict_keys_b[k]] = [child_range_b];
     else # if the ancestral species is widespread, can speciate
         anc_range_size = count(==(1),dict_keys_b[k]) # ancestral range size for index k in key field
         # looping for each different size of child range after speciation.
@@ -217,27 +245,59 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
         idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k
         #
         child_range_b = Vector{Int}[]; # initialize vector of vectors to store all child ranges from ancestral range k 
-        for l in 1:floor.(Int64,anc_range_size/2) # loop over each range split size for the child range e.g. for k = 4, we can have split of size 1&2 (not including its compelement of size 3)
-            child_init = zeros(Int64,num_regions); # Initialize vector of zeros 
-            child_init[1:l] .= 1; # Assign 1's equal to the range split size 
-            child_comb = unique(permutations(child_init)); # permute all possibilities of combinations of 1's for that split size 
-            for m in 1:length(child_comb) # loop over this permutation 
-                idx_child = findall(child_comb[m].== 1 );
-                test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
-                if all(test_idx) == true
-                    push!(child_range_b,child_comb[m]) # If yes, then we accept that split of size l as a valid split
+        for l in 1:floor.(Int64,anc_range_size/2) # loop over each possible range split size for the child range e.g. for k = 4, we can have split of size 1&2 (not including its compelement of size 3)
+            # if l == anc_range_size - l  # the special case when ancestral range of size 2, since we can only have 1|1 split. So, no need to iterate all permutations of (1,0,0,...) 
+            #     idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k with size 2
+            #     for m in 1:floor.(Int64,anc_range_size/2)
+            #         child_range_b = zeros(Int64,num_regions); # Initialize vector of zeros 
+            #         child_range_b[idx_anc[1:m]] .= 1; # Assign 1
+            #         # evt_b[dict_keys_b[k]] = child_range_b;
+            #         evt_b[dict_keys_b[k]] = [child_range_b];
+            #     end
+            # else 
+                child_init = zeros(Int64,num_regions); # Initialize vector of zeros 
+                child_init[1:l] .= 1; # Assign 1's equal to the range split size 
+                child_comb = unique(permutations(child_init)); # permute all possibilities of combinations of 1's for that split size 
+                if l != anc_range_size - l # case: not equal split between left and right child range size e.g. l|m where l!=m
+                    for m in 1:length(child_comb) # loop over this permutation 
+                        idx_child = findall(child_comb[m].== 1 );
+                        test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
+                        if all(test_idx) == true 
+                            push!(child_range_b,child_comb[m]) # If yes, then we accept that split of size l as a valid split
+                        end
+                    end
+                else # case: equal split between left and right child range size e.g. l|m where l = m (not fixed yet)
+                    track_range = Vector{Int}[]
+                        for n in 1:length(child_comb) # loop over this permutation 
+                            idx_child = findall(child_comb[n].== 1 );
+                            test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
+                            if all(test_idx) == true 
+                                push!(child_range_b,child_comb[n]) # If yes, then we accept that split of size l as a valid split
+                                push!(track_range,child_comb[n])
+                                break
+                            end
+                        end
+                    child_comb_reduce = setdiff(child_comb,track_range)
+                    for p in 1:length(child_comb_reduce)
+                        idx_child = findall(child_comb_reduce[p].== 1 );
+                        test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
+                        if (all(test_idx) && child_comb_reduce[p] ∉ [dict_keys_b[k]].-track_range) == true
+                            push!(child_range_b,child_comb_reduce[p])
+                            push!(track_range,child_comb_reduce[p])
+                        end
+                    end
                 end
-            end
         end
         evt_b[dict_keys_b[k]] = child_range_b; # append keys and value fields to dictionary 
     end
 end 
 
-# println(evt_b)
+println(evt_b)# Note for range size 4, the complement (range size 2) is still recorded 
+# print(dict_keys_b)
 # println(evt_b[[1,1,1,0]])
 # println([1,1,1,0]-evt_b[[1,1,1,0]][1])
-# println(length(evt_b))
-# xxx
+# println(length(evt_b)) 
+xxx
 
 ###########################################
 # # Define rates for event space in each model variant 
@@ -246,6 +306,9 @@ end
 #########################
 # Rate function for within-region speciation 
 #########################
+
+# note: use lognormal distribution with mean 1 (for no effect from non-density)
+# use flag (true or false) for using density-independent or not (rate == 1)
 
 function rate_w(base,region_ind,rate_scalar,model)
     ## Error checking
