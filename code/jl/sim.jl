@@ -202,39 +202,6 @@ end
 evt_b       = OrderedDict(); # Create an empty dictionary for between-region speciation
 dict_keys_b = copy(dict_keys); # keys field of the dictionary evt_b
 
-# for k in 1:length(dict_keys_b) # Looping over each ancestral species range in keys field 
-#     if count(==(1),dict_keys_b[k])==1 # if the ancestral species is endemic, can't speciate 
-#         evt_b[dict_keys_b[k]] = [] # then assign an empty vector for child range
-#     # the special case when ancestral range of size 2, since we can only have 1|1 split. So, no need to iterate all permutations of (1,0,0,...) 
-#     elseif count(==(1),dict_keys_b[k])==2 
-#         idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k with size 2
-#         child_range_b = zeros(Int64,num_regions); # Initialize vector of zeros 
-#         child_range_b[idx_anc[1]] = 1; # Assign 1
-#         # evt_b[dict_keys_b[k]] = child_range_b;
-#         evt_b[dict_keys_b[k]] = [child_range_b];
-#     else # if the ancestral species is widespread, can speciate
-#         anc_range_size = count(==(1),dict_keys_b[k]) # ancestral range size for index k in key field
-#         # looping for each different size of child range after speciation.
-#         # Divide by 2 because the range size of the other child can be derived from the range of the other one. 
-#         idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k
-#         #
-#         child_range_b = Vector{Int}[]; # initialize vector of vectors to store all child ranges from ancestral range k 
-#         for l in 1:floor.(Int64,anc_range_size/2) # loop over each range split size for the child range e.g. for k = 4, we can have split of size 1&2 (not including its compelement of size 3)
-#             child_init = zeros(Int64,num_regions); # Initialize vector of zeros 
-#             child_init[1:l] .= 1; # Assign 1's equal to the range split size 
-#             child_comb = unique(permutations(child_init)); # permute all possibilities of combinations of 1's for that split size 
-#             for m in 1:length(child_comb) # loop over this permutation 
-#                 idx_child = findall(child_comb[m].== 1 );
-#                 test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
-#                 if all(test_idx) == true
-#                     push!(child_range_b,child_comb[m]) # If yes, then we accept that split of size l as a valid split
-#                 end
-#             end
-#         end
-#         evt_b[dict_keys_b[k]] = child_range_b; # append keys and value fields to dictionary 
-#     end
-# end 
-
 for k in 1:length(dict_keys_b) # Looping over each ancestral species range in keys field 
     if count(==(1),dict_keys_b[k])==1 # if the ancestral species is endemic, can't speciate 
         evt_b[dict_keys_b[k]] = [] # then assign an empty vector for child range
@@ -246,15 +213,6 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
         #
         child_range_b = Vector{Int}[]; # initialize vector of vectors to store all child ranges from ancestral range k 
         for l in 1:floor.(Int64,anc_range_size/2) # loop over each possible range split size for the child range e.g. for k = 4, we can have split of size 1&2 (not including its compelement of size 3)
-            # if l == anc_range_size - l  # the special case when ancestral range of size 2, since we can only have 1|1 split. So, no need to iterate all permutations of (1,0,0,...) 
-            #     idx_anc = findall(dict_keys_b[k].== 1 ); # find locations of 1's in ancestral range k with size 2
-            #     for m in 1:floor.(Int64,anc_range_size/2)
-            #         child_range_b = zeros(Int64,num_regions); # Initialize vector of zeros 
-            #         child_range_b[idx_anc[1:m]] .= 1; # Assign 1
-            #         # evt_b[dict_keys_b[k]] = child_range_b;
-            #         evt_b[dict_keys_b[k]] = [child_range_b];
-            #     end
-            # else 
                 child_init = zeros(Int64,num_regions); # Initialize vector of zeros 
                 child_init[1:l] .= 1; # Assign 1's equal to the range split size 
                 child_comb = unique(permutations(child_init)); # permute all possibilities of combinations of 1's for that split size 
@@ -266,19 +224,19 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
                             push!(child_range_b,child_comb[m]) # If yes, then we accept that split of size l as a valid split
                         end
                     end
-                else # case: equal split between left and right child range size e.g. l|m where l = m (not fixed yet)
-                    track_range = Vector{Int}[]
+                else # case: equal split between left and right child range size e.g. l|m where l = m 
+                    track_range = Vector{Int}[] # initialize empty vector of vectors 
                         for n in 1:length(child_comb) # loop over this permutation 
                             idx_child = findall(child_comb[n].== 1 );
                             test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
                             if all(test_idx) == true 
                                 push!(child_range_b,child_comb[n]) # If yes, then we accept that split of size l as a valid split
-                                push!(track_range,child_comb[n])
+                                push!(track_range,child_comb[n]) # If yes, add that to track_range
                                 break
                             end
                         end
-                    child_comb_reduce = setdiff(child_comb,track_range)
-                    for p in 1:length(child_comb_reduce)
+                    child_comb_reduce = setdiff(child_comb,track_range) # remove the newly added child range from the pool in child_comb
+                    for p in 1:length(child_comb_reduce) # loop over the remaining
                         idx_child = findall(child_comb_reduce[p].== 1 );
                         test_idx = [x in idx_anc for x = idx_child] # Check if that split of size l is valid (i.e. if its contained in ancestral range)
                         if (all(test_idx) && child_comb_reduce[p] ∉ [dict_keys_b[k]].-track_range) == true
@@ -292,16 +250,28 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
     end
 end 
 
-println(evt_b)# Note for range size 4, the complement (range size 2) is still recorded 
+# println(evt_b)# Note for range size 4, the complement (range size 2) is still recorded 
 # print(dict_keys_b)
 # println(evt_b[[1,1,1,0]])
+# println(typeof(evt_b[[1,1,1,0]]))
 # println([1,1,1,0]-evt_b[[1,1,1,0]][1])
 # println(length(evt_b)) 
-xxx
+# xxx
 
 ###########################################
 # # Define rates for event space in each model variant 
 ###########################################
+
+# log-normal distribution (mean = m, std = std) in Julia 
+# p.s. use lognormal to ensure rate is always positive
+function myLogNormal(m,std)
+    γ = 1+std^2/m^2
+    μ = log(m/sqrt(γ))
+    σ = sqrt(log(γ))
+    return LogNormal(μ,σ)
+end
+
+# println(rand(myLogNormal(1,1)))
 
 #########################
 # Rate function for within-region speciation 
@@ -310,18 +280,22 @@ xxx
 # note: use lognormal distribution with mean 1 (for no effect from non-density)
 # use flag (true or false) for using density-independent or not (rate == 1)
 
-function rate_w(base,region_ind,rate_scalar,model)
+function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
-    n_i   = num_species_per_region[region_ind] # Number of species currently in region_ind
+    n_i   = species_count_ind # Number of species currently in region_ind
     if n_i == 0
         ans = 0 # rate equals 0 if no species 
     else
         ## Define rate parameters 
         rho_w = base # base rate 
         w_d   = rate_scalar # rate scalar for within-region speciation
-        m_i_w = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        if only_density == true 
+            m_i_w = 1 # means no density-independent factors 
+        elseif only_density == false
+            m_i_w = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 
+        end 
         ## Compute the overall rates
         if model == "log"
             m_d_w = (log(n_i)+1)^(w_d)
@@ -332,27 +306,32 @@ function rate_w(base,region_ind,rate_scalar,model)
     end
     return(ans)
 end
-# num_species_per_region = [1,0,0] # just for testing (remove later)
-# test = rate_w(0.1,1,0.1,"log")
+# test = rate_w(0.1,1,0,0.1,false,"log") # 0 species in region 1
+# test2 = rate_w(0.1,1,10,0.1,true,"log") # 10 species in region 1
 # println(test)
+# println(test2)
 # xxx
 
 #########################
 # Rate function for extinction
 #########################
 
-function rate_e(base,region_ind,rate_scalar,model)
+function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
-    n_i   = num_species_per_region[region_ind] # Number of species currently in region_ind
+    n_i   = species_count_ind # Number of species currently in region_ind
     if n_i == 0
         ans = 0 # rate equals 0 if no species 
     else # if there is species 
         ## Define rate parameters 
         rho_e = base # base rate 
         e_d   = rate_scalar # rate scalar for extinction
-        m_i_e = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        if only_density == true 
+            m_i_e = 1 # means no density-independent factors 
+        elseif only_density == false
+            m_i_e = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 
+        end 
         ## Compute the overall rates
         if model == "log"
             m_d_e = (log(n_i)+1)^(e_d)
@@ -368,7 +347,7 @@ end
 # Rate function for dispersal 
 #########################
 
-function rate_d(base,home_ind,away_ind,home_scalar,away_scalar,model)
+function rate_d(base,home_ind,away_ind,home_scalar,away_scalar,only_density,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert home_ind <= num_regions && home_ind > 0 "home region index must be in {1,2,...,num_regions}" # home_ind must be <= num_regions
@@ -384,7 +363,11 @@ function rate_d(base,home_ind,away_ind,home_scalar,away_scalar,model)
         rho_d      = base # base rate 
         d_d_home   = home_scalar # rate scalar in home region
         d_d_away   = away_scalar # rate scalar in away region
-        m_i_d      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        if only_density == true 
+            m_i_d = 1 # means no density-independent factors 
+        elseif only_density == false
+            m_i_d = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 
+        end 
         ## Compute the overall rates
         if model == "log"
             m_d_d  = (log(n_i)+1)^d_d_home + (log(n_j+1)+1)^d_d_away
@@ -405,7 +388,7 @@ end
 
 # format for left_range/right_range follows the keys field in dict_keys_b (e.g. [1,0,1] to represent range AC)
 
-function rate_b(base,left_range,right_range,rate_scalar,model)
+function rate_b(base,left_range,right_range,rate_scalar,only_density,model)
     ## Error checking
     @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert left_range + right_range in dict_keys_b "Not a valid split" # left and right ranges must be derived from an ancestral range in dict_keys_b
@@ -422,7 +405,11 @@ function rate_b(base,left_range,right_range,rate_scalar,model)
         ## Define rate parameters 
         rho_b      = base # base rate 
         b_d        = rate_scalar # rate scalar 
-        m_i_b      = rand(Uniform(0.01,1)) # draw density-independent rate randomly [0.01,1]
+        if only_density == true 
+            m_i_b = 1 # means no density-independent factors 
+        elseif only_density == false
+            m_i_b = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 
+        end 
         # m_i_b      = 1 # draw density-independent rate randomly [0.01,1]
         ## Compute the range split score f
         f = 0 # initialize the range score for left_range|right_range split 
@@ -452,17 +439,17 @@ end
 # left_range  = [1,1,0,0]
 # right_range = [0,0,1,1]
 # num_species_per_region = [2,3,4,5]
-# test = rate_b(1,left_range,right_range,1,"log") # should be equal with rate_b(1,right_range,left_range,1)
+# test = rate_b(1,left_range,right_range,1,true,"log") # should be equal with rate_b(1,right_range,left_range,1)
 # println(test)
 # xxxx
 
 ###########################################
-# # Simulate events on tree
+# # Simulate events on tree (set up)
 ###########################################
 
 do_simulation                      = true; # Initial flag to continue simulating events 
 start_time                         = 0.0; # Start time of the simulation (0 = past time)
-start_range                        = floor(Int64,rand(Uniform(1,num_ranges))) # Starting range state at root node 
+start_range                        = floor(Int64,rand(Uniform(1,num_ranges))); # Starting range state at root node 
 num_alive_lineage                  = 1; # Start with one species (stem branch)
 
 # base rates 
@@ -471,34 +458,85 @@ rho_e = rand(Uniform(0.01,1));
 rho_d = rand(Uniform(0.01,1));
 rho_b = rand(Uniform(0.01,1));
 
-# rate scalars
-w_d      = rand(Uniform(-1,1))
-e_d      = rand(Uniform(-1,1))
-d_d_home = rand(Uniform(-1,1))
-d_d_away = rand(Uniform(-1,1))
-b_d      = rand(Uniform(-1,1))
+# rate scalars (draw from standard normal distribution)
+# p.s. rate scalar == 0 -> no density-dependent effect 
+w_d      = rand(Normal());
+e_d      = rand(Normal());
+d_d_home = rand(Normal());
+d_d_away = rand(Normal());
+b_d      = rand(Normal());
 
 # model
-model    = "log"
+model        = "log";
+only_density = false; # not including other density-independent factors when computing rates 
+
+# set up lookup table for  pre-computed region-based within-region speciation rates (only need to set up for one region)
+lookup_w = Float64[]; # initialize empty vector to store rate_w
+for i in 1:1001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 1000)
+    value_w = rate_w(rho_w,1,i-1,w_d,only_density,model);
+    push!(lookup_w,value_w); # append to lookup_w
+end
+# println(lookup_w[1:5])
+# xxx
+
+# set up lookup table for  pre-computed region-based extinction rates (only need to set up for one region)
+lookup_e = Float64[]; # initialize empty vector to store rate_e
+for i in 1:1001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 1000)
+    value_e = rate_e(rho_e,1,i-1,e_d,only_density,model);
+    push!(lookup_e,value_e); # append to lookup_e
+end
+# println(lookup_e[1:5])
+# xxx
+
+# initialize lookup table for dispersal rates (cached during simulation and revisit the combination if ever)
+# e.g. combination in num_species_per_region
+# only need to set up for number of species in any home location i and number of species in any away location j
+lookup_d = DataFrame(num_species_i = Int64[],num_species_j = Int64[],dispersal_ij = Float64[]);
+
+# initialize lookup table for between-region speciation rates (cached during simulation and revisit the combination if ever)
+# p.s. (left_range,right_range) and (right_range,left_range) will have the same rate
+nodenames = ["ancestral_range","left_range","right_range"]
+for i in 1:num_regions
+    reg_name = "num_spec_region_$i";
+    push!(nodenames,reg_name)
+end
+push!(nodenames,"between-reg rate")
+lookup_b = DataFrame([name => [] for name in nodenames])
+#
+for j in (num_regions+1):num_ranges #loop over ancestral range with size > 1
+    for k in 1:length(evt_b[dict_keys_b[j]]) # loop over each left child species' range for the given ancestral range
+        new_row = ([dict_keys_b[j],evt_b[dict_keys_b[j]][k],dict_keys_b[j]- evt_b[dict_keys_b[j]][k]]) # for a given left child range, find its right species' range 
+        for l in 1: num_regions + 1
+            new_row = vcat(new_row,0) # assign placeholder for number of species in each region and rate to be equal to 0 (temporary)
+        end
+        push!(lookup_b,new_row) # push to the look up table
+    end
+end
+# println(lookup_b)
+# xx
 
 # At root node
 num_species_per_range[start_range]      = 1;
-range_key_root                          = [k for (k,v) in ranges_inv if v==start_range]; #range key that correspond to range label at the root
-reg_idx_root                            = findall(range_key_root[1] .==1 ); # find the region indexes that correspond to that range at the root 
-num_species_per_region[reg_idx_root]    .= 1; # update the number of species currently alive in each region 
+range_key_root                          = [k for (k,v) in ranges_inv if v==start_range]; #range key that correspond to range label at the root e.g. (1,1,0) for label 4
+reg_idx_root                            = findall(range_key_root[1] .==1 ); # find the region indexes that correspond to that range at the root e.g. region_ind = 1,2 for range (1,1,0)
+num_species_per_region[reg_idx_root]    .= 1; # update the number of species currently alive in each region e.g. 1 species with range {A,B} means 1 species in A and 1 species in B
 # println(start_range)
 # println(range_key_root)
 # println(reg_idx_root)
 # println(num_species_per_region)
 
 ## Aug 20: Tested loop for computing total sum of rates across all ranges. 
-curr_time = start_time; # Initialize current time of simulation 
-#
+## Aug 23: Tested loop for computing w_total,e_total,d_total working, using the lookup table
+
+curr_time = start_time; # Initialize current time of simulation p.s. time starts from 0 (past)
+# dataframe to store history of events and information during simulation
+# p.s. branch_length = elapsed time until that event occuring, current_time = previous_time + branch_length
 history_df = DataFrame(parent_state = Int64[],event_type = String[],
                        left_child_state = Int64[],right_child_state = Int64[],
-                       branch_length = Float64[],current_time = Float64[]) # dataframe to store history of events and information during simulation
-# add first event at the root node 
-push!(history_df,(start_range,"root",0,0,0,curr_time)) # P.S. left_child_state = right_child_state = 0 means it is a non-speciation event 
+                       branch_length = Float64[],current_time = Float64[]) 
+# add first event at the root node (root node)
+# P.S. left_child_state = right_child_state = 0 means it is a non-speciation event (state = range state)
+push!(history_df,(start_range,"root",0,0,0,curr_time)) 
 # println("example df = ",history_df)
 # xxx
 
@@ -516,12 +554,21 @@ push!(history_df,(start_range,"root",0,0,0,curr_time)) # P.S. left_child_state =
         #
         reg_away  = setdiff([1:1:num_regions;],reg_idx) # find all possible regions for dispersing for species with range i
         for j in 1:length(reg_idx) # for region-specific rates
-            global w_total += rate_w(rho_w,reg_idx[j],w_d,model) # e.g. for range {A,B}, w_{A,B} = w_A + w_B
-            global e_total += rate_e(rho_e,reg_idx[j],e_d,model) # e.g. for range {A,B}, e_{A,B} = e_A + e_B 
+            n_j = num_species_per_region[reg_idx[j]] # find the number of currently living species in region reg_idx[j]
+            global w_total += lookup_w[n_j+1] # e.g. for range {A,B}, w_{A,B} = w_A + w_B with n_j species in A or B from lookup table
+            global e_total += lookup_e[n_j+1] # e.g. for range {A,B}, e_{A,B} = e_A + e_B with n_j species in A or B from lookup table
             #
             if reg_away != Int64[] # if the species in range i is not already widespread in all regions 
                 for k in 1:length(reg_away)
-                    global d_total += rate_d(rho_d,reg_idx[j],reg_away[k],d_d_home,d_d_away,model) #e.g. for range {A,B}, d_AB_j = d_A_C + d_B_C
+                    # check if the given combination of n_j and n_k already has its pre-computed dispersal rate in lookup_d
+                    idx_match_d = (lookup_d.num_species_i .== num_species_per_region[reg_idx[j]]) .& (lookup_d.num_species_j .== num_species_per_region[reg_away[k]])
+                    if  all(!,idx_match_d) # if that n_j and n_k does not exist yet, compute the rate and store in lookup_d
+                        disp_rate = rate_d(rho_d,reg_idx[j],reg_away[k],d_d_home,d_d_away,only_density,model) # compute dispersal rate from home to away
+                        global d_total +=  disp_rate # e.g. for range {A,B}, d_AB_j = d_A_C + d_B_C or d_A_j = d_A_B + d_A_C
+                        push!(lookup_d,[num_species_per_region[reg_idx[j]],num_species_per_region[reg_away[k]],disp_rate])
+                    else # if already exist, recall rate from lookup_d
+                        d_total += lookup_d.dispersal_ij[findall(idx_match_d .== 1)][1]
+                    end
                 end
             else
                 global d_total += 0  # if already widepread in all regions
@@ -535,7 +582,7 @@ push!(history_df,(start_range,"root",0,0,0,curr_time)) # P.S. left_child_state =
             for k in 1:num_left_splits # e.g. for range {A,B,C}, can have left range = {A,B} or left_range = {A}
                 left_range  = evt_b[range_key[1]][k] 
                 right_range = range_key[1] - left_range
-                global b_total += 2*rate_b(rho_b,left_range,right_range,b_d,model) # 2 is there because {A}|{B} == {B}|{A}
+                global b_total += 2*rate_b(rho_b,left_range,right_range,b_d,only_density,model) # 2 is there because {A}|{B} == {B}|{A}
             end
         end
     end
