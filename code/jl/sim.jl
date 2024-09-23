@@ -36,6 +36,7 @@ stop_condition = "time" # If time is the stopping condition
 num_regions = 3; # Number of regions 
 num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
 num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
+# num_species_per_range = [10,0,0,0,0,0,0]
 num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
 # P.S. the entries for num_species_per_region and num_species_per_range will be updated at each time step
 # since rates only depend on n_i at the current time, not past times. 
@@ -586,12 +587,14 @@ push!(history_df,(start_range,"root",0,0,0,curr_time))
             end
         end
     end
-    total_rate = sum(num_species_per_range)*(w_total+e_total+d_total+b_total) # total sum of rates across ranges 
-    # println(w_total)
-    # println(e_total)
-    # println(d_total)
-    # println(b_total)
-    # xxxx
+    total_rate = sum(num_species_per_range)*(w_total+e_total+d_total+b_total) # total sum of rates across ranges (26 Aug Check again)
+    #
+    println(w_total)
+    println(e_total)
+    println(d_total)
+    println(b_total)
+    println(num_species_per_range)
+    xxxx
 
     #############################################
     # # draw time to next event
