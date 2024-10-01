@@ -80,9 +80,9 @@ heat_map_e <- function(rate_scale,base_rate,indep_rate_vec,n1_lower,n2_lower,tim
   ##############
   func_names <- c("log","loglog")
   plot_list = list()
-  title_list <- c(paste("log extinction\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
+  title_list <- c(paste("standard extinction\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
                         "independent rate 1=",indep_rate_vec[1],",","independent rate 2=",indep_rate_vec[2]),
-                  paste("log-log extinction\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
+                  paste("logarithmic extinction\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
                         "independent rate 1=",indep_rate_vec[1],",","independent rate 2=",indep_rate_vec[2]))
   # make plot for each model
   for (i in 1:2){
@@ -182,9 +182,9 @@ heat_map_w <- function(rate_scale,base_rate,indep_rate_vec,n1_lower,n2_lower,tim
   ##############
   func_names <- c("log","loglog")
   plot_list = list()
-  title_list <- c(paste("log within-region speciation\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
+  title_list <- c(paste("standard within-region speciation\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
                         "independent rate 1=",indep_rate_vec[1],",","independent rate 2=",indep_rate_vec[2]),
-                  paste("log-log within-region speciation\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
+                  paste("logarithmic within-region speciation\n","rate scale=",rate_scale,",","base rate=",base_rate,"\n",
                         "independent rate 1=",indep_rate_vec[1],",","independent rate 2=",indep_rate_vec[2]))
   # make plot for each model
   for (i in 1:2){
@@ -279,9 +279,9 @@ heat_map_d <- function(rate_scale_i,rate_scale_j,base_rate,indep_rate,n1_lower,n
   ##############
   func_names <- c("log","loglog")
   plot_list = list()
-  title_list <- c(paste("log dispersal rate\n","rate scale i=",rate_scale_i,",","rate scale j=",rate_scale_j,"\n",
+  title_list <- c(paste("standard dispersal rate 1 to 2\n","rate scale reg 1=",rate_scale_i,",","rate scale reg 2=",rate_scale_j,"\n",
                         "base rate=",base_rate,",","independent rate=",indep_rate),
-                  paste("log-log dispersal rate\n","rate scale i=",rate_scale_i,",","rate scale j=",rate_scale_j,"\n",
+                  paste("logarithmic dispersal rate 1 to 2\n","rate scale reg 1=",rate_scale_i,",","rate scale reg 2=",rate_scale_j,"\n",
                         "base rate=",base_rate,",","independent rate=",indep_rate))
   # make plot for each model
   for (i in 1:2){
@@ -512,9 +512,9 @@ heat_map_b <- function(rate_scale,base_rate,indep_rate,left_range,right_range,
   func_names  <- c("log","loglog")
   # range_names <- c("A","B","C","AB","AC","BC")
   plot_list = list()
-  title_list <- c(paste("log between-region speciation rate\n","rate scale =",rate_scale,"\n",
+  title_list <- c(paste("standard between-region speciation rate\n","rate scale =",rate_scale,"\n",
                         "base rate=",base_rate,",","independent rate=",indep_rate),
-                  paste("log-log between-region speciation rate\n","rate scale =",rate_scale,"\n",
+                  paste("logarithmic between-region speciation rate\n","rate scale =",rate_scale,"\n",
                         "base rate=",base_rate,",","independent rate=",indep_rate))
   # make plot for each model
   # browser()
