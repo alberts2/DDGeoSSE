@@ -8,13 +8,15 @@
   ###################
   # # SET FILE SYSTEM
   ####################
-  fp = "/Users/albertsoewongsono/Documents/Code Testing/density_geosse/code/jl/example/"
+  # fp = "/Users/albertsoewongsono/Documents/Code Testing/density_geosse/code/jl/example/"
+  fp = "/Users/albertsoewongsono/Documents/Code Testing/density_geosse/data/"
   
   ###################
   # # READ TREE DATA
   ####################
   #
-  numsim = 10 # total number of simulated trees 
+  # numsim = 10 # total number of simulated trees 
+  numsim = 50000 # total number of simulated trees 
   #
   for (i in 1:numsim){
     sim_file = paste0(fp,"complete_tree_",i,".tre") # tree file name
