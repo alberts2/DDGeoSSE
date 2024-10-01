@@ -41,8 +41,15 @@
 # -. added continuous time points from timebin and max_time to record number of species across regions in cts time 
 # -. added continuous time points from timebin and max_time to record number of species across ranges in cts time 
 # -. added event times to region_count_history and range_count_history
+# -. lower base extinction rate to avoid trees keep becoming extinct under a certain set of base event rates
+# -. fixed typo on m_d_d (changed + to *)
+# -. added the correct extensions for the output i.e. labels.csv, dat.csv and .csv 
+# -. reduced the max runtime from 50 to 35
 
-@time begin
+# TBA: maximum number of times tree i can be resimulated? (i.e. so we do not have an infinite loop in case that set of parameters is impossible to generate a valid tree)
+# TBA: write a bash script to parallel the tree simulation in batches (for faster run time)
+
+# @time begin
     #####################
     # Load julia packages
     #####################
@@ -79,7 +86,7 @@
     # max_time       = 0.5; # Maximum simulation time 
     # max_time       = 2; # Maximum simulation time 
     # max_time       = 4; # Maximum simulation time 
-    max_time       = 50; # Maximum simulation time 
+    max_time       = 35; # Maximum simulation time 
     # max_time       = 10; # Maximum simulation time 
     stop_condition = "time" # If time is the stopping condition
     # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
@@ -428,7 +435,7 @@
             end 
             ## Compute the overall rates
             if model == "log"
-                m_d_d  = (log(n_i)+1)^d_d_home + (log(n_j+1)+1)^d_d_away
+                m_d_d  = (log(n_i)+1)^d_d_home * (log(n_j+1)+1)^d_d_away
             elseif model == "standard"
                 m_d_d  = (n_i^d_d_home)*(n_j+1)^d_d_away
             end
@@ -513,7 +520,8 @@
     
     # base rates 
     rho_w = rand(Uniform(0.01,1));
-    rho_e = rand(Uniform(0.01,1));
+    rho_e = rand(Uniform(0.01,0.1));
+    # rho_e = rand(Uniform(0.01,1));
     # rho_e = rand(Uniform(10,100));
     rho_d = rand(Uniform(0.01,1));
     rho_b = rand(Uniform(0.01,1));
@@ -526,11 +534,11 @@
     # rate scalars (draw from standard normal distribution)
     # only consider negative direction to avoid runaway in taxa count
     # p.s. rate scalar == 0 -> no density-dependent effect 
-    w_d      = rand(Normal(-3,1));
-    e_d      = rand(Normal(-3,1));
-    d_d_home = rand(Normal(-3,1));
-    d_d_away = rand(Normal(-3,1));
-    b_d      = rand(Normal(-3,1));
+    w_d      = rand(Normal(-4,1));
+    e_d      = rand(Normal(-4,1));
+    d_d_home = rand(Normal(-4,1));
+    d_d_away = rand(Normal(-4,1));
+    b_d      = rand(Normal(-4,1));
 
     # println("scalar w ",w_d)
     # println("scalar e ",e_d)
@@ -545,7 +553,7 @@
     
     # set up lookup table for  pre-computed region-based within-region speciation rates (only need to set up for one region)
     lookup_w = Float64[]; # initialize empty vector to store rate_w
-    for i in 1:1001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 1000)
+    for i in 1:10001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 10000)
         value_w = rate_w(rho_w,1,i-1,w_d,only_density,model);
         push!(lookup_w,value_w); # append to lookup_w
     end
@@ -554,7 +562,7 @@
     
     # set up lookup table for  pre-computed region-based extinction rates (only need to set up for one region)
     lookup_e = Float64[]; # initialize empty vector to store rate_e
-    for i in 1:1001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 1000)
+    for i in 1:10001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 10000)
         value_e = rate_e(rho_e,1,i-1,e_d,only_density,model);
         push!(lookup_e,value_e); # append to lookup_e
     end
@@ -1202,19 +1210,19 @@
     open(tree_file,"w") do file
         write(file,newick_str)
     end
-
+    
     # # write tip data to file (as csv)
-    CSV.write("tip_data_tree_"*sim_id,tip_character_df;header=false)
+    CSV.write("tip_data_tree_"*sim_id*".dat.csv",tip_character_df;header=false)
     # println(history_df)
     # println(tip_range_df)
     # println(tip_character_dat)
     # # write parameters to file
     
     # # write summary statistics and rates to file
-    CSV.write("param_label_tree_"*sim_id,param_label_df) # write rate parameters and number of alive tips
-    CSV.write("anagenetic_changes_tree_"*sim_id,anagen_df) # write anagenetic history along branches 
-    CSV.write("species_count_region_tree_"*sim_id,DataFrame(value = region_count_history)) # write species count across regions over event times
-    CSV.write("species_count_range_tree_"*sim_id,DataFrame(value =range_count_history)) # write species count across ranges over event times
-    CSV.write("cts_species_count_region_tree_"*sim_id,DataFrame(value = species_cts_time_region)) # write species count across regions over cts times
-    CSV.write("cts_species_count_range_tree_"*sim_id,DataFrame(value = species_cts_time_range)) # write species count across ranges over cts times
-end
+    CSV.write("param_label_tree_"*sim_id*".labels.csv",param_label_df) # write rate parameters and number of alive tips
+    CSV.write("anagenetic_changes_tree_"*sim_id*".csv",anagen_df) # write anagenetic history along branches 
+    CSV.write("species_count_region_tree_"*sim_id*".csv",DataFrame(value = region_count_history)) # write species count across regions over event times
+    CSV.write("species_count_range_tree_"*sim_id*".csv",DataFrame(value =range_count_history)) # write species count across ranges over event times
+    CSV.write("cts_species_count_region_tree_"*sim_id*".csv",DataFrame(value = species_cts_time_region)) # write species count across regions over cts times
+    CSV.write("cts_species_count_range_tree_"*sim_id*".csv",DataFrame(value = species_cts_time_range)) # write species count across ranges over cts times
+# end
