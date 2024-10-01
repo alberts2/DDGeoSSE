@@ -118,7 +118,7 @@ plot_e <- function(t_lower,t_upper,e_d,base_lower,base_upper,n_lower,type,timewi
   ##############
   func_names <- c("log","loglog")
   plot_list = list()
-  title_list <- c("log extinction","log-log extinction")
+  title_list <- c("standard extinction","logarithmic extinction")
   # make plot
   for (i in 1:2){
     dat_i <- dat_comb[dat_comb$func==func_names[i],]
@@ -267,7 +267,7 @@ plot_w <- function(t_lower,t_upper,w_d,base_lower,base_upper,n_lower,type,timewi
   ##############
   func_names <- c("log","loglog")
   plot_list = list()
-  title_list <- c("log within-region speciation","log-log within-region speciation")
+  title_list <- c("standard within-region speciation","logarithmic within-region speciation")
   # make plot
   for (i in 1:2){
     dat_i <- dat_comb[dat_comb$func==func_names[i],]
@@ -446,7 +446,7 @@ plot_d_i_j <- function(t_lower,t_upper,d_d_i,d_d_j,base_lower,base_upper,n_i_low
   ##############
   func_names <- c("log","loglog")
   plot_list = list()
-  title_list <- c("log dispersal","log-log dispersal")
+  title_list <- c("standard dispersal","logarithmic dispersal")
   # make plot
   for (i in 1:2){
     dat_i <- dat_comb[dat_comb$func==func_names[i],]
@@ -648,7 +648,7 @@ plot_b <- function(t_lower,t_upper,left_range,right_range,b_d,base_lower,base_up
   ##############
   func_names <- c("log","loglog")
   plot_list = list()
-  title_list <- c("log between-region","log-log between-region")
+  title_list <- c("standard between-region","logarithmic between-region")
   # make plot
   for (i in 1:2){
     dat_i <- dat_comb[dat_comb$func==func_names[i],]
