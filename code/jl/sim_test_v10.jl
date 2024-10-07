@@ -113,7 +113,7 @@
     # ranges_inv = {
     #     (1,0,0):1,
     #     (0,1,0):2,
-    #     (0,0,2):3,
+    #     (0,0,1):3,
     #     (1,1,0):4,
     #     (1,0,1):5,
     #     (0,1,1):6,
@@ -522,7 +522,6 @@
     rho_w = rand(Uniform(0.01,1));
     rho_e = rand(Uniform(0.01,0.1));
     # rho_e = rand(Uniform(0.01,1));
-    # rho_e = rand(Uniform(10,100));
     rho_d = rand(Uniform(0.01,1));
     rho_b = rand(Uniform(0.01,1));
 
