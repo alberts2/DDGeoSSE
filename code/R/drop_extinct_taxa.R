@@ -9,9 +9,12 @@
   # # SET FILE SYSTEM
   ####################
   fp     = "/Users/albertsoewongsono/Documents/Code Testing/density_geosse/data/"
-  in_fp  = paste0(fp,"sim1/complete_tree/") #input complete tree file from sim1
-  out_fp = paste0(fp,"sim1/extant_tree/") #output extant only tree for sim1
-  dat_fp = paste0(fp,"sim1/tip_data/") #chracter data for sim1 
+  # in_fp  = paste0(fp,"sim1/complete_tree/") #input complete tree file from sim1
+  # out_fp = paste0(fp,"sim1/extant_tree/") #output extant only tree for sim1
+  # dat_fp = paste0(fp,"sim1/tip_data/") #chracter data for sim1 
+  in_fp  = paste0(fp,"sim2/complete_tree/") #input complete tree file from sim2
+  out_fp = paste0(fp,"sim2/extant_tree/") #output extant only tree for sim2
+  dat_fp = paste0(fp,"sim2/tip_data/") #chracter data for sim2
   
   
   ###################
@@ -19,7 +22,7 @@
   ####################
   #
   not_exist = c()
-  numsim = 50000 # total number of simulated trees 
+  numsim = 1000 # total number of simulated trees 
   #
   for (i in 1:numsim){
     sim_file = paste0(in_fp,"complete_tree_",i,".tre") # tree file name
