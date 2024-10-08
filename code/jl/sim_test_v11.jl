@@ -47,6 +47,7 @@
 # -. reduced the max runtime from 50 to 35
 
 # this script sim_test_v11.jl
+# -. increased n in lookup_w and lookup_e from 10000 to 100000
 # -. fixed data frame structures before writing to csv (i.e. remove any, and have separate columns)
 # -. allow event rates to accept base rate of 0 (not just positive base rates)
 # -. extend the runtime in order to reach the local equilibrium capacity under the testing described below 
@@ -527,13 +528,14 @@
     start_range                        = 1;
     num_alive_lineage                  = 1; # Start with one species (stem branch)
     
-    
+    ### sim1
     # base rates 
     # rho_w = rand(Uniform(0.01,1));
     # rho_e = rand(Uniform(0.01,0.1));
     # rho_d = rand(Uniform(0.01,1));
     # rho_b = rand(Uniform(0.01,1));
 
+    ### sim2 (no dispersal, no between-region speciation, constant extinction rate)
     rho_w = 3.141793;
     rho_e = 0.1;
     rho_d = 0;
@@ -544,6 +546,7 @@
     # println("base d ",rho_d)
     # println("base b ",rho_b)
 
+    ### sim1
     # rate scalars (draw from standard normal distribution)
     # only consider negative direction to avoid runaway in taxa count
     # p.s. rate scalar == 0 -> no density-dependent effect 
@@ -553,6 +556,7 @@
     # d_d_away = rand(Normal(-4,1));
     # b_d      = rand(Normal(-4,1));
 
+    ### sim2 (no dispersal, no between-region speciation, constant extinction rate)
     w_d      = -2;
     e_d      = 0;
     d_d_home = rand(Normal(-4,1));
@@ -572,7 +576,7 @@
     
     # set up lookup table for  pre-computed region-based within-region speciation rates (only need to set up for one region)
     lookup_w = Float64[]; # initialize empty vector to store rate_w
-    for i in 1:10001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 10000)
+    for i in 1:100001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 100000)
         value_w = rate_w(rho_w,1,i-1,w_d,only_density,model);
         push!(lookup_w,value_w); # append to lookup_w
     end
@@ -581,7 +585,7 @@
     
     # set up lookup table for  pre-computed region-based extinction rates (only need to set up for one region)
     lookup_e = Float64[]; # initialize empty vector to store rate_e
-    for i in 1:10001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 10000)
+    for i in 1:100001 # loop over each possible number of species in a region (from n_i = 0 to n_i = 100000)
         value_e = rate_e(rho_e,1,i-1,e_d,only_density,model);
         push!(lookup_e,value_e); # append to lookup_e
     end
@@ -1103,7 +1107,8 @@
             global num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
             global num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
             global start_time                         = 0.0; # Start time of the simulation (0 = past time)
-            global start_range                        = floor(Int64,rand(Uniform(1,num_ranges))); # Starting range state at root node e.g. 1,2,...,7 for 3 region
+            # global start_range                        = floor(Int64,rand(Uniform(1,num_ranges))); # Starting range state at root node e.g. 1,2,...,7 for 3 region
+            global start_range                        = 1;
             global num_alive_lineage                  = 1; # Start with one species (stem branch)
             num_species_per_range[start_range] = 1;
             #
