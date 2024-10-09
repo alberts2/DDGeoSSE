@@ -11,6 +11,7 @@ for i in $(seq 1 50000); do
     rm cts_species_count_range_tree_$i.csv 
     rm tip_data_tree_$i.dat.csv
     rm complete_tree_$i.tre
+    rm cladogenetic event history_$i.csv
 done
 
 rm anagen_changes.zip
@@ -21,3 +22,4 @@ rm param_label.zip
 rm species_count_range.zip
 rm species_count_reg.zip
 rm tip_data.zip
+rm cladogen_history.zip

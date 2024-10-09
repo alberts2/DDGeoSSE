@@ -9,4 +9,5 @@ for i in $(seq 1 50000); do
     mv /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/code/jl/cts_species_count_range_tree_$i.csv /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/data/
     mv /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/code/jl/tip_data_tree_$i.dat.csv /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/data/
     mv /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/code/jl/complete_tree_$i.tre /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/data/
+     mv /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/code/jl/cladogenetic event history_$i.csv /Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/data/
 done
