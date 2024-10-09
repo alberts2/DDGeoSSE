@@ -2,13 +2,13 @@
 
 library(ggplot2)
 
-plot_reg_occupancy = function(num_sim){
+plot_reg_occupancy = function(num_sim,batch_num){
   ###################
   # # SET FILE SYSTEM
   ####################
   fp     = "/Users/albertsoewongsono/Documents/Code Testing/density_geosse/"
-  region_dat_fp  = paste0(fp,"data/sim2/cts_species_count_reg/") #input region occupancy data in cts time 
-  out_fp = paste0(fp,"plot/sim2/") #output 
+  region_dat_fp  = paste0(fp,"data/sim",batch_num,"/cts_species_count_reg/") #input region occupancy data in cts time 
+  out_fp = paste0(fp,"plot/sim",batch_num,"/") #output 
   
   ###################
   # # INITIALIZATION
