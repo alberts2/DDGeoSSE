@@ -4,7 +4,7 @@
 
 library(ggplot2)
 
-plot_range_occupancy = function(num_sim){
+plot_range_occupancy = function(num_sim,batch_num){
   ###################
   # # SET FILE SYSTEM
   ###################
