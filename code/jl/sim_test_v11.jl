@@ -48,6 +48,8 @@
 
 # this script sim_test_v11.jl
 # -. increased n in lookup_w and lookup_e from 10000 to 100000
+# -. added new column to history_df for event_type at each cladogenetic event 
+# -. write cladogenetic event history over event times (from history_df)
 # -. fixed data frame structures before writing to csv (i.e. remove any, and have separate columns)
 # -. allow event rates to accept base rate of 0 (not just positive base rates)
 # -. extend the runtime in order to reach the local equilibrium capacity under the testing described below 
@@ -682,8 +684,8 @@
     # final_state = range state on the branch just before an event on that branch, extinct_status = whether its already extinct (1) or not (0) and "missing" if no event on the branch yet
     # split_state = whether it corresponds to a splitting event (1) or not (0) and "missing" if no event occuring on the branch yet,
     # branch_length = length of branch label idx (time_end - time_start), child_1_idx = idx of 1st child (missing if no speciation), child_2_idx = idx of 2nd child (missing if no speciation)
-    history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = []) 
-    push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
+    history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = []) 
+    push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
     # history_df[1,:time_end]=1   
     # println("example df = ",history_df)
     # xxx
@@ -891,8 +893,8 @@
     
             if next_event[1][1] == "w" # if the next event is within-region speciation (Sep 5: already checked)
                 max_idx = maximum(history_df.idx) # find the maximum idx from current recorded branch labels in history_df
-                push!(history_df,(max_idx+1,curr_time,missing,next_state[1],missing,missing,missing,missing,missing)) # child 1 inherits the parent's range
-                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing)) # child 2 inherits the other range in case parent is widespread
+                push!(history_df,(max_idx+1,curr_time,missing,next_state[1],missing,missing,missing,missing,missing,missing)) # child 1 inherits the parent's range
+                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing,missing)) # child 2 inherits the other range in case parent is widespread
                 # update the parent branch's status
                 # P.S. row_chosen must be transformed into a vector instead of scalar
                 history_df[[row_chosen],:time_end]       .= curr_time
@@ -901,6 +903,7 @@
                 history_df[[row_chosen],:branch_length]  .= curr_time - deepcopy(history_df[[row_chosen],:time_start][1])
                 history_df[[row_chosen],:child_1_idx]    .= deepcopy(max_idx+1)
                 history_df[[row_chosen],:child_2_idx]    .= deepcopy(max_idx+2)
+                history_df[[row_chosen],:event_type]     .= "w"
                 # println(row_chosen)
                 # println(history_df)
                 # println(history_df[row_chosen,:time_end])
@@ -930,6 +933,7 @@
                 history_df[[row_chosen],:extinct_status] .= 1
                 history_df[[row_chosen],:split_status]   .= 0
                 history_df[[row_chosen],:branch_length]  .= curr_time - deepcopy(history_df[[row_chosen],:time_start][1])
+                history_df[[row_chosen],:event_type]     .= "e"
                 # println(history_df)
                 # xxx
             elseif next_event[1][1] == "d" # if the next event is dispersal (Sep 6: already checked)
@@ -961,8 +965,8 @@
             elseif next_event[1][1] == "b" # if the next event is between-region speciation (Sep 6: already checked)
                 # println("history before = ",history_df)
                 max_idx = maximum(history_df.idx) # find the maximum idx from current recoded branch labels in history_df
-                push!(history_df,(max_idx+1,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing)) # left range for child 1
-                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][3],missing,missing,missing,missing,missing)) # right range for child 2
+                push!(history_df,(max_idx+1,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing,missing)) # left range for child 1
+                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][3],missing,missing,missing,missing,missing,missing)) # right range for child 2
                 # update the parent branch's status
                 # P.S. row_chosen must be transformed into a vector instead of scalar (by doing [row_chosen])
                 history_df[[row_chosen],:time_end]       .= curr_time
@@ -971,6 +975,7 @@
                 history_df[[row_chosen],:branch_length]  .= curr_time - deepcopy(history_df[[row_chosen],:time_start][1])
                 history_df[[row_chosen],:child_1_idx]    .= deepcopy(max_idx+1)
                 history_df[[row_chosen],:child_2_idx]    .= deepcopy(max_idx+2)
+                history_df[[row_chosen],:event_type]     .= "b"
                 #
                 # println("this is between-region speciation")
                 # println("event type = ",next_event[1] )
@@ -1146,8 +1151,8 @@
             species_cts_time_range[1][2:(num_ranges+1)]=deepcopy(num_species_per_range)        
             #
             curr_time = start_time; # Initialize current time of simulation p.s. time starts from 0 (past)
-            global history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = []) 
-            push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
+            global history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = []) 
+            push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
             global anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
         end
         
@@ -1261,9 +1266,10 @@
 
     # # write summary statistics and rates to file
     CSV.write("param_label_tree_"*sim_id*".labels.csv",param_label_df) # write rate parameters and number of alive tips
-    CSV.write("anagenetic_changes_tree_"*sim_id*".csv",anagen_df) # write anagenetic history along branches 
+    CSV.write("anagenetic_changes_tree_"*sim_id*".csv",anagen_df) # write anagenetic history along branches over event times 
     CSV.write("species_count_region_tree_"*sim_id*".csv",dat_reg) # write species count across regions over event times
     CSV.write("species_count_range_tree_"*sim_id*".csv",dat_range) # write species count across ranges over event times
     CSV.write("cts_species_count_region_tree_"*sim_id*".csv",dat_reg_cts) # write species count across regions over cts times
     CSV.write("cts_species_count_range_tree_"*sim_id*".csv",dat_range_cts) # write species count across ranges over cts times
+    CSV.write("cladogenetic event history_"*sim_id*".csv",history_df) # write cladogenetic event history over event times 
 # end
