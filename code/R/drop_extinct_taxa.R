@@ -37,9 +37,12 @@
         extant_tree = drop.tip(complete_tree,extinct_tips) # drop extinct taxa
         #
         write.tree(extant_tree,file=paste0(out_fp,"extant_tree_",i,".tre")) # save the reconstructed tree
+        #
+        print(paste0("extant tree ",i," done"))
       }
       else{
         not_exist = append(not_exist,i)
+        print(paste0("complete tree ",i," does not exist"))
       }
     }
   }

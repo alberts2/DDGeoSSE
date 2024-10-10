@@ -65,6 +65,8 @@ plot_tree_stats = function(num_sim,batch_num){
     num_globalext_vec   = append(num_globalext_vec,count_globalext)
     # append each event type count for tree i
     individual_stats    = append(individual_stats,c(count_within,count_between,count_dispersal,count_localext,count_globalext))
+    # print some message about simulation i data
+    print(paste0("simulation ",i," stats are done"))
   }
   #
   ###################
