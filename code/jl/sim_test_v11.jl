@@ -57,6 +57,7 @@
 # In this, we valide n_i(t) for i = A under scenario of no dispersal and between-region, and constant extinction rate
 # we find the base rate for w event that corresponds to n_i = 100 in the limit. 
 # -. Added a scenario (sim3) for simulations under time-varying within-region and time-varying extinction rates that correspond to n_i = 100 in the limit
+# -. Added scenario sim4 and sim5 (full model)
 
 # NOTE: we fixed the root states for the two scenarios above because there is no dispersal event, 
 #       so the expected n_i across trees is only true if all trees start from the same root state
@@ -100,7 +101,7 @@
     # max_time       = 0.5; # Maximum simulation time 
     # max_time       = 35; # Maximum simulation time 
     # max_time       = 500; # Maximum simulation time 
-    max_time       = 500; # Maximum simulation time 
+    max_time       = 100; # Maximum simulation time 
     stop_condition = "time" # If time is the stopping condition
     # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
     
@@ -542,22 +543,29 @@
     # rho_d = rand(Uniform(0.01,1));
     # rho_b = rand(Uniform(0.01,1));
 
-    ### sim2 (no dispersal, no between-region speciation, constant extinction rate, C_e = C_w = 1)
+    ### sim2 (no dispersal, no between-region speciation, constant extinction rate, fixed root state, ni_* = 100, C_e = C_w = 1)
     # rho_w = 3.141793;
     # rho_e = 0.1;
     # rho_d = 0;
     # rho_b = 0;
 
-    ### sim3 (no dispersal, no between-region speciation, time-varying extinction rate, C_e = C_w = 1)
+    ### sim3 (no dispersal, no between-region speciation, time-varying extinction rate,fixed root state, ni_* = 100 C_e = C_w = 1)
     # rho_w = 1.761029;
     # rho_e = 0.01;
     # rho_d = 0;
     # rho_b = 0;
 
-    # rho_w = 1;
-    # rho_e = 1.01;
-    # rho_d = 0.07058099;
-    # rho_b = 0.001;
+    ### sim4 (dispersal with d_d_src = 0, no between-region speciation, time-varying extinction rate, fixed root state, ni_* = 100, C_e = C_w = C_d = 1)
+    # rho_w = 1.741029;
+    # rho_e = 0.01;
+    # rho_d = 0.01;
+    # rho_b = 0;
+
+    ### sim5 (full model, fixed root state, ni_* = 100, C_e = C_w = C_d = 1)
+    rho_w = 1.75746;
+    rho_e = 0.01;
+    rho_d = 0.01;
+    rho_b = 1;
 
     # println("base w ",rho_w)
     # println("base e ",rho_e)
@@ -588,11 +596,19 @@
     # d_d_away = rand(Normal(-4,1));
     # b_d      = rand(Normal(-4,1));
 
-    # w_d      = 0.2;
-    # e_d      = 0.2;
+    ### sim4 (dispersal with d_d_src = 0, no between-region speciation, time-varying extinction rate, fixed root state, ni_* = 100, C_e = C_w = C_d = 1)
+    # w_d      = -1;
+    # e_d      = 2;
     # d_d_home = 0;
-    # d_d_away = 0;
-    # b_d      = -1;
+    # d_d_away = -1;
+    # b_d      = 0;
+
+    ### sim5 (full model, fixed root state, ni_* = 100, C_e = C_w = C_d = 1)
+    w_d      = -1;
+    e_d      = 2;
+    d_d_home = -1;
+    d_d_away = -1;
+    b_d      = -1;
 
     # println("scalar w ",w_d)
     # println("scalar e ",e_d)
