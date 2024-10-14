@@ -7,6 +7,7 @@ library(ggplot2)
 # t_lower     = lower bound of runtime t
 # t_upper     = upper bound of runtime t
 # e_d         = extinction rate factor in home location (-inf,inf)
+# base        = base ext rate
 # base_lower  = lower bound of density-independent rate (> 0 )
 # base_upper  = upper bound of density-independent rate (> 0)
 # n_lower.    = minimum number of species in i
@@ -24,7 +25,7 @@ library(ggplot2)
 # test <- plot_e(0,500,0.05,0.1,0.1,10,"constant increase",10000,0) # density effect increases extinction rate
 # test <- plot_e(0,500,-0.05,0.1,0.1,10,"constant increase",10000,0) # density effect decreases extinction rate
 
-plot_e <- function(t_lower,t_upper,e_d,base_lower,base_upper,n_lower,type,timewin,opt){
+plot_e <- function(t_lower,t_upper,e_d,base,base_lower,base_upper,n_lower,type,timewin,opt){
   ##############
   # CONDITION CHECK  #
   ##############
@@ -79,8 +80,8 @@ plot_e <- function(t_lower,t_upper,e_d,base_lower,base_upper,n_lower,type,timewi
     den_vec_loglog[i]  <- exp(e_d*log(log(n_i[i])+1))
     #
     # ei_vec_lin[i]  <- e_i_i[i] + den_vec_lin[i]
-    ei_vec_log[i]     <- e_i_i[i] * den_vec_log[i]
-    ei_vec_loglog[i]  <- e_i_i[i] * den_vec_loglog[i]
+    ei_vec_log[i]     <- base*e_i_i[i] * den_vec_log[i]
+    ei_vec_loglog[i]  <- base*e_i_i[i] * den_vec_loglog[i]
   }
   # browser()
   
@@ -156,6 +157,7 @@ plot_e <- function(t_lower,t_upper,e_d,base_lower,base_upper,n_lower,type,timewi
 # t_lower     = lower bound of runtime t
 # t_upper     = upper bound of runtime t
 # w_d         = within-region rate factor in home location (-inf,inf)
+# base        = base w rate
 # base_lower  = lower bound of density-independent rate (> 0 )
 # base_upper  = upper bound of density-independent rate (> 0)
 # n_lower.    = minimum number of species in i
@@ -173,7 +175,7 @@ plot_e <- function(t_lower,t_upper,e_d,base_lower,base_upper,n_lower,type,timewi
 
 # test <- plot_w(0,500,-0.05,0.1,0.1,0,"constant increase",10000,1)  #density effect decreases within-region speciation rate 
 
-plot_w <- function(t_lower,t_upper,w_d,base_lower,base_upper,n_lower,type,timewin,opt){
+plot_w <- function(t_lower,t_upper,w_d,base,base_lower,base_upper,n_lower,type,timewin,opt){
   ##############
   # CONDITION CHECK  #
   ##############
@@ -228,8 +230,8 @@ plot_w <- function(t_lower,t_upper,w_d,base_lower,base_upper,n_lower,type,timewi
     den_vec_loglog[i]  <- exp(w_d*log(log(n_i[i])+1))
     #
     # wi_vec_lin[i]  <- w_i_i[i] + den_vec_lin[i]
-    wi_vec_log[i]     <- w_i_i[i] * den_vec_log[i]
-    wi_vec_loglog[i]  <- w_i_i[i] * den_vec_loglog[i]
+    wi_vec_log[i]     <- base*w_i_i[i] * den_vec_log[i]
+    wi_vec_loglog[i]  <- base*w_i_i[i] * den_vec_loglog[i]
   }
   # browser()
   
@@ -307,6 +309,7 @@ plot_w <- function(t_lower,t_upper,w_d,base_lower,base_upper,n_lower,type,timewi
 # t_upper     = upper bound of runtime t
 # d_d_i       = dispersal rate factor in home location (-inf,inf)
 # d_d_j       = dispersal rate factor in target location (inf,inf)
+# base        = base dispersal rate
 # base_lower  = lower bound of density-independent rate (> 0 )
 # base_upper  = upper bound of density-independent rate (> 0)
 # n_i_lower.  = minimum number of species in home location (> 0)
@@ -332,7 +335,7 @@ plot_w <- function(t_lower,t_upper,w_d,base_lower,base_upper,n_lower,type,timewi
 # test <- plot_d_i_j(0,500,0.05,-0.01,0.1,0.1,10,10,"constant increase both",10000,0) # DD in i overpowers DD in j to increase the rate
 # test <- plot_d_i_j(0,500,-0.05,0.01,0.1,0.1,10,10,"constant increase both",10000,0) # DD in i overpowers DD in j to decrease the rate
 
-plot_d_i_j <- function(t_lower,t_upper,d_d_i,d_d_j,base_lower,base_upper,n_i_lower,n_j_lower,type,timewin,opt){
+plot_d_i_j <- function(t_lower,t_upper,d_d_i,d_d_j,base,base_lower,base_upper,n_i_lower,n_j_lower,type,timewin,opt){
   ##############
   # CONDITION CHECK  #
   ##############
@@ -404,8 +407,8 @@ plot_d_i_j <- function(t_lower,t_upper,d_d_i,d_d_j,base_lower,base_upper,n_i_low
     den_vec_loglog[i]  <- exp(d_d_i*log(log(n_i[i])+1)+d_d_j*log(log(n_j[i]+1)+1))
     #
     # dij_vec_lin[i]    <- d_i_j[i] + den_vec_lin[i]
-    dij_vec_log[i]       <- d_i_j[i] * den_vec_log[i]
-    dij_vec_loglog[i]    <- d_i_j[i] * den_vec_loglog[i]
+    dij_vec_log[i]       <- base*d_i_j[i] * den_vec_log[i]
+    dij_vec_loglog[i]    <- base*d_i_j[i] * den_vec_loglog[i]
   }
   # browser()
   
@@ -492,6 +495,7 @@ plot_d_i_j <- function(t_lower,t_upper,d_d_i,d_d_j,base_lower,base_upper,n_i_low
 # 1 = region A, 2 = region B, 3 = region C
 
 # b_d             = between-region rate factor
+# base            = base B rate
 # base_lower      = lower bound of density-independent rate
 # base_upper      = upper bound of density-independent rate
 
@@ -509,7 +513,7 @@ plot_d_i_j <- function(t_lower,t_upper,d_d_i,d_d_j,base_lower,base_upper,n_i_low
 # test <- plot_b(0,500,c(1),c(3),0.05,0.1,0.1,c(1,1,1),"constant increase",10000,0) # density effect increases between region speciation ranges k and l as species increases
 # test <- plot_b(0,500,c(1),c(3),-0.05,0.1,0.1,c(1,1,1),"constant increase",10000,0) # density effect decreases between region speciation ranges k and l as species increases
 
-plot_b <- function(t_lower,t_upper,left_range,right_range,b_d,base_lower,base_upper,n_vec_lower,type,timewin,opt){
+plot_b <- function(t_lower,t_upper,left_range,right_range,b_d,base,base_lower,base_upper,n_vec_lower,type,timewin,opt){
   ##############
   # CONDITION CHECK  #
   ##############
@@ -607,8 +611,8 @@ plot_b <- function(t_lower,t_upper,left_range,right_range,b_d,base_lower,base_up
     den_vec_loglog[i]  <- (length(left_range)*length(right_range))*(1/range_score_loglog)
     #
     # bkl_vec_lin[i]  <- b_k_l[i] + den_vec_lin[i]
-    bkl_vec_log[i]    <- b_k_l[i] * den_vec_log[i]
-    bkl_vec_loglog[i] <- b_k_l[i] * den_vec_loglog[i]
+    bkl_vec_log[i]    <- base*b_k_l[i] * den_vec_log[i]
+    bkl_vec_loglog[i] <- base*b_k_l[i] * den_vec_loglog[i]
   }
   # browser()
   
