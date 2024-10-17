@@ -62,6 +62,16 @@
 # NOTE: we fixed the root states for the two scenarios above because there is no dispersal event, 
 #       so the expected n_i across trees is only true if all trees start from the same root state
 
+
+# NOTE:
+# -. In lookup tables for w and e, we only do the computation for 1 region. This is okay because we only care about local region density
+# e.g. if I have computed w for n_i = 4, then if I want to compute w in region 2 when n_2 = 4, then I can just look the computation for when
+# n_i = 4. 
+# -. in case, we have density_independent factor, this is still okay because in this simulator m_I across different locations are drawn 
+# from the same distribution with same parameters 
+# -. Also, it is okay to re-draw m_I INSIDE each rate fuction because it varies with time and as in above, they are drawn from the same 
+# distribution with same parameters. 
+
 # TBA: maximum number of times tree i can be resimulated? (i.e. so we do not have an infinite loop in case that set of parameters is impossible to generate a valid tree)
 
 # @time begin
