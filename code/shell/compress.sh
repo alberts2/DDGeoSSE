@@ -10,4 +10,4 @@ find . -name "cts_species_count_region_tree_*.csv" -print0 | xargs -0 zip cts_sp
 find . -name "cts_species_count_range_tree_*.csv" -print0 | xargs -0 zip cts_species_count_range.zip
 find . -name "tip_data_tree_*.dat.csv" -print0 | xargs -0 zip tip_data.zip
 find . -name "complete_tree_*.tre" -print0 | xargs -0 zip complete_tree.zip
-
+find . -name "cladogenetic event history_*.csv" -print0 | xargs -0 zip cladogen_history.zip

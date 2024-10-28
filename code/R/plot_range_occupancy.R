@@ -1,17 +1,20 @@
 # # This R script plots the average region occupancy across data (trees) in continuous time for 3-region system
 
+# # TO DO: No need to post-process the csv anymore, need to edit this script
+
 library(ggplot2)
 
-plot_range_occupancy = function(num_sim){
+plot_range_occupancy = function(num_sim,batch_num){
   ###################
   # # SET FILE SYSTEM
-  ####################
+  ###################
   fp     = "/Users/albertsoewongsono/Documents/Code Testing/density_geosse/"
-  range_dat_fp  = paste0(fp,"data/sim1/cts_species_count_range/") #input range occupancy data in cts time
-  out_fp = paste0(fp,"plot/sim1/") #output 
-  #
-  num_range = 7
-  #
+  range_dat_fp  = paste0(fp,"data/sim",batch_num,"/cts_species_count_range/") #input range occupancy data in cts time
+  out_fp = paste0(fp,"plot/sim",batch_num,"/") #output 
+  
+  ###################
+  # # INITIALIZATION
+  ###################
   range_A_arr = list() # list containing range A occupancy in cts time for each tree 
   range_B_arr = list() # list containing range B occupancy in cts time for each tree
   range_C_arr = list() # list containing range C occupancy in cts time for each tree
@@ -30,46 +33,20 @@ plot_range_occupancy = function(num_sim){
   
   ###################
   # # READ DATA
-  ####################
+  ###################
   num_sim = num_sim
   # a = function(test){
   for (i in 1:num_sim){
-    dat = read.table(paste0(range_dat_fp,"cts_species_count_range_tree_",i,".csv"),header = T)
-    
-    # create dataframe for that tree
-    dat[1,] = gsub("[a-zA-Z]", "", dat[1,])
-    columns = lapply(1:num_range,function(i) NA)
-    names(columns) <- paste0("Range ", 1:num_range)
+    dat_df = read.table(paste0(range_dat_fp,"cts_species_count_range_tree_",i,".csv"),sep = ",",header = T)
     #
-    dat_df = data.frame("time"= NA)
-    dat_df = cbind(dat_df,as.data.frame(columns))
-    
-    for (j in 1:nrow(dat)){
-      dat[j,] = gsub("[a-zA-Z]", "", dat[j,]) #remove letters
-      #
-      dat_df[j,] = unlist(strsplit(dat[j,], ",")) #unlist 
-      # browser()
-      for (k in 1:length(dat_df[j,])){ #turn each element of dat_df[j,] into a numeric value and replace
-        if (k == 1){
-          dat_df[j,k] = gsub("\\[.*?", "", dat_df[j,k])
-        } else if (k == length(dat_df[j,])){
-          dat_df[j,k] = gsub("*?\\]", "", dat_df[j,k])
-        } else {
-          dat_df[j,k] = dat_df[j,k]
-        }
-      }
-    }
-    dat_df[, 1:(num_range+1)] <- sapply(dat_df[, 1:(num_range+1)], as.numeric) #convert to numeric
-    #
-    range_A_arr[[i]] = dat_df$Range.1
-    range_B_arr[[i]] = dat_df$Range.2
-    range_C_arr[[i]] = dat_df$Range.3
-    range_AB_arr[[i]] = dat_df$Range.4
-    range_AC_arr[[i]] = dat_df$Range.5
-    range_BC_arr[[i]] = dat_df$Range.6
-    range_ABC_arr[[i]] = dat_df$Range.7
+    range_A_arr[[i]] = dat_df$range_1
+    range_B_arr[[i]] = dat_df$range_2
+    range_C_arr[[i]] = dat_df$range_3
+    range_AB_arr[[i]] = dat_df$range_4
+    range_AC_arr[[i]] = dat_df$range_5
+    range_BC_arr[[i]] = dat_df$range_6
+    range_ABC_arr[[i]] = dat_df$range_7
     print(paste0("done sim ",i))
-    # browser()
   }
   #
   time_vec = dat_df$time
@@ -82,14 +59,16 @@ plot_range_occupancy = function(num_sim){
     mean_range_5 = append(mean_range_5, mean(sapply(range_AC_arr,function(x) x[i])))
     mean_range_6 = append(mean_range_6, mean(sapply(range_BC_arr,function(x) x[i])))
     mean_range_7 = append(mean_range_7, mean(sapply(range_ABC_arr,function(x) x[i])))
-
+    
   }
   #
   summary_df = data.frame(time = time_vec,mean_range_1 = mean_range_1,mean_range_2 = mean_range_2,
                           mean_range_3 = mean_range_3,mean_range_4 = mean_range_4,mean_range_5 = mean_range_5,
                           mean_range_6 = mean_range_6,mean_range_7 = mean_range_7)
   
-  #### PLOT 
+  ###################
+  # # PLOT
+  ###################
   dat_range_1 = data.frame(time = time_vec,mean_range = mean_range_1)
   dat_range_2 = data.frame(time = time_vec,mean_range = mean_range_2)
   dat_range_3 = data.frame(time = time_vec,mean_range = mean_range_3)
@@ -134,13 +113,16 @@ plot_range_occupancy = function(num_sim){
   plot(p_6)
   plot(p_7)
   
-  ggsave("range_A_count.jpg",plot = p_1, path = out_fp)
-  ggsave("range_B_count.jpg",plot = p_2, path = out_fp)
-  ggsave("range_C_count.jpg",plot = p_3, path = out_fp)
-  ggsave("range_AB_count.jpg",plot = p_4, path = out_fp)
-  ggsave("range_AC_count.jpg",plot = p_5, path = out_fp)
-  ggsave("range_BC_count.jpg",plot = p_6, path = out_fp)
-  ggsave("range_ABC_count.jpg",plot = p_7, path = out_fp)
+  ###################
+  # # SAVE PLOTS
+  ###################
+  ggsave("range_A_count.jpg",plot = p_1, path = out_fp,width = 8, height = 6, units = "in")
+  ggsave("range_B_count.jpg",plot = p_2, path = out_fp,width = 8, height = 6, units = "in")
+  ggsave("range_C_count.jpg",plot = p_3, path = out_fp,width = 8, height = 6, units = "in")
+  ggsave("range_AB_count.jpg",plot = p_4, path = out_fp,width = 8, height = 6, units = "in")
+  ggsave("range_AC_count.jpg",plot = p_5, path = out_fp,width = 8, height = 6, units = "in")
+  ggsave("range_BC_count.jpg",plot = p_6, path = out_fp,width = 8, height = 6, units = "in")
+  ggsave("range_ABC_count.jpg",plot = p_7, path = out_fp,width = 8, height = 6, units = "in")
   # }
   return(summary_df)
 }
