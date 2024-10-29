@@ -1,9 +1,7 @@
-# This script will simulate phylogenetic datasets under a 
-# density-dependent GeoSSE model.
+# This script will simulate a batch of phylogenetic trees under a 
+# density-dependent GeoSSE model. Tree label starts from start_idx to (start_idx + batch_size - 1)
 
-# julia sim_test.jl simulate sim 1 true 1000
-
-# @time begin
+# have validated script for lemma 3 (sim7)
 
 #####################
 # Load julia packages
@@ -18,46 +16,36 @@ using CSV # Package to write to csv
 ####################
 # Command line arguments 
 ####################
-args = ARGS    
-out_path   = map(x->string(x), args)[1]
-out_prefix = map(x->string(x), args)[2]
-sim_id     = map(x->string(x), args)[3] # tree id
-batch_size = 1 # map(x->string(x), args) # tree id
-resimulate = true # args[5] # whether to resimulate in case of tree extinction or not
-timebin    = "10" # args[5] # time bin for tracking number of species across region/range in continuous time 
-
+args          = ARGS    
+out_path      = map(x->string(x), args)[1]
+out_prefix    = map(x->string(x), args)[2]
+start_idx     = parse(Int,args[3]) # start tree id
+batch_size    = parse(Int,args[4]) # batch size 
 
 #############
 # File system
 #############
-# out_dir  = "/Users/albertsoewongsono/Documents/Code\\ Testing/density_geosse/code/jl"*out_path*"output";
 out_dir  = out_path
 ################
 # Initial setting
 ################
 min_taxa       = 5; # Minimum number of extant taxa to simulate 
-# max_taxa       = 100; # Maximum number of extant taxa to simulate
 max_taxa       = 10; # Maximum number of extant taxa to simulate
-# max_time       = 0.5; # Maximum simulation time 
-# max_time       = 35; # Maximum simulation time 
-# max_time       = 500; # Maximum simulation time 
-max_time       = 7; # Maximum simulation time 
+# max_time       = 7; # Maximum simulation time 
+max_time       = 10; # Maximum simulation time 
 stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
+global resimulate = true # whether to resimulate in case of tree extinction or not
+# global timebin    = "10" # time bin for tracking number of species across region/range in continuous time 
+global timebin    = "1000" # time bin for tracking number of species across region/range in continuous time 
 
 #############
 # Model setup
 #############
 # Define state space 
-# num_regions = 4; # Number of regions 
-# num_regions = 3; # Number of regions 
-num_regions = 2; # Number of regions 
+# num_regions = 2; # Number of regions 
+num_regions = 3; # Number of regions 
 num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
-num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
-# num_species_per_range = [10,0,0,0,0,0,0]
-num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
-# P.S. the entries for num_species_per_region and num_species_per_range will be updated at each time step
-# since rates only depend on n_i at the current time, not past times. 
 
 #################################################
 # Create dictionary for region occupancy status (present/absent) and range labels
@@ -131,8 +119,6 @@ for k in 1:length(dict_keys_w)
         evt_w[dict_keys_w[k]] = child_range_w; # create dictionary for evt_w
     end
 end
-# println(evt_w)
-# xxxx
 
 ################################################
 # Dictionary for extinction (evt_e)
@@ -268,14 +254,7 @@ for k in 1:length(dict_keys_b) # Looping over each ancestral species range in ke
     end
 end 
 
-# println(evt_b)# Note for range size 4, the complement (range size 2) is still recorded 
-# print(dict_keys_b)
-# println(evt_b[[1,1,1,0]])
-# println(typeof(evt_b[[1,1,1,0]]))
-# println([1,1,1,0]-evt_b[[1,1,1,0]][1])
-# println(length(evt_b)) 
-# xxx
-    
+
 ###########################################
 # # Define rates for event space in each model variant 
 ###########################################
@@ -289,8 +268,6 @@ function myLogNormal(m,std)
     return LogNormal(μ,σ)
 end
 
-# println(rand(myLogNormal(1,1)))
-
 #########################
 # Rate function for within-region speciation 
 #########################
@@ -300,8 +277,7 @@ end
 
 function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,indep_model,model)
     ## Error checking
-    # @assert base > 0 "base rate must be positive" # base rate must be positive 
-    @assert base >= 0 "base rate must be positive" # base rate must be positive 
+    @assert base >= 0 "base rate must be positive" # base rate must be non negative
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
     n_i   = species_count_ind # Number of species currently in region_ind
     if n_i == 0
@@ -341,11 +317,6 @@ function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,indep
     end
     return(ans)
 end
-# test = rate_w(0.1,1,0,0.1,false,"log") # 0 species in region 1
-# test2 = rate_w(0.1,1,10,0.1,true,"log") # 10 species in region 1
-# println(test)
-# println(test2)
-# xxx
 
 #########################
 # Rate function for extinction
@@ -353,8 +324,7 @@ end
 
 function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,indep_model,model)
     ## Error checking
-    # @assert base > 0 "base rate must be positive" # base rate must be positive
-    @assert base >= 0 "base rate must be positive" # base rate must be positive 
+    @assert base >= 0 "base rate must be positive" # base rate must be non negative
     @assert region_ind <= num_regions && region_ind > 0 "region index must be in {1,2,...,num_regions}" # region ind must be <= num_regions
     n_i   = species_count_ind # Number of species currently in region_ind
     if n_i == 0
@@ -370,9 +340,11 @@ function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,indep
                     m_i_e = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 (same distribution across all regions)
             elseif indep_model == "geosse" && num_regions == 2 # standard geosse with 2 regions
                 if region_ind == 1
-                    m_i_e = 0.2 
+                    # m_i_e = 0.2 
+                    m_i_e = 1.0
                 elseif region_ind == 2
-                    m_i_e = 0.4
+                    # m_i_e = 0.4
+                    m_i_e = 0.5
                 end
             elseif indep_model == "geosse" && num_regions == 3 # standard geosse with 3 regions 
                 if region_ind == 1
@@ -399,10 +371,9 @@ end
 # Rate function for dispersal 
 #########################
 
-function rate_d(base,home_ind,away_ind,home_scalar,away_scalar,only_density,indep_model,model)
+function rate_d(base,num_species_per_region,home_ind,away_ind,home_scalar,away_scalar,only_density,indep_model,model)
     ## Error checking
-    # @assert base > 0 "base rate must be positive" # base rate must be positive 
-    @assert base >= 0 "base rate must be positive" # base rate must be positive 
+    @assert base >= 0 "base rate must be positive" # base rate must be non negative
     @assert home_ind <= num_regions && home_ind > 0 "home region index must be in {1,2,...,num_regions}" # home_ind must be <= num_regions
     @assert away_ind <= num_regions && away_ind > 0 "away region index must be in {1,2,...,num_regions}" # away_ind must be <= num_regions
     @assert home_ind != away_ind "home region index cannot be equal to away region index"
@@ -462,17 +433,14 @@ end
 # left or right children orientation. 
 
 # format for left_range/right_range follows the keys field in dict_keys_b (e.g. [1,0,1] to represent range AC)
-function rate_b(base,left_range,right_range,rate_scalar,only_density,indep_model,model)
+function rate_b(base,num_species_per_region,left_range,right_range,rate_scalar,only_density,indep_model,model)
     ## Error checking
-    # @assert base > 0 "base rate must be positive" # base rate must be positive 
     @assert base >= 0 "base rate must be positive" # base rate must be positive 
     @assert left_range + right_range in dict_keys_b "Not a valid split" # left and right ranges must be derived from an ancestral range in dict_keys_b
     @assert left_range != right_range "left and right ranges cannot be equal" # left and right child ranges must be different
     #
     idx_leftrange  = findall(left_range .==1)  # find index of every region that are occupied by the species that forms left range 
     idx_rightrange = findall(right_range .==1) # find index of every region that are occupied by the species that forms right range 
-    # @assert all(x->x>0,num_species_per_region[idx_leftrange]) "no species with that given left range" # the number of species with that left range must be > 0
-    # @assert all(x->x>0,num_species_per_region[idx_rightrange]) "no species with that given right range" # the number of species with that right range must be > 0
     #
     if any(num_species_per_region[idx_leftrange].==0) == true || any(num_species_per_region[idx_rightrange].==0) == true 
         ans = 0 # if no species in the regions that form either left range or right range, rate = 0
@@ -503,7 +471,6 @@ function rate_b(base,left_range,right_range,rate_scalar,only_density,indep_model
                 end
             end
         end 
-        # m_i_b      = 1 # draw density-independent rate randomly [0.01,1]
         ## Compute the range split score f
         f = 0 # initialize the range score for left_range|right_range split 
         for i in 1:length(idx_leftrange)
@@ -524,36 +491,86 @@ function rate_b(base,left_range,right_range,rate_scalar,only_density,indep_model
     end
     return(ans)
 end
-# println(rate_b(1,[1,0,0],[0,1,1],1,true,"log"))
-# xxx
-# # Example of non-valid split
-# left_range  = [1,1,0,0]
-# right_range = [0,1,0,1]
-# # Example of valid split
-# left_range  = [1,1,0,0]
-# right_range = [0,0,1,1]
-# num_species_per_region = [2,3,4,5]
-# test = rate_b(1,left_range,right_range,1,true,"log") # should be equal with rate_b(1,right_range,left_range,1)
-# println(test)
-# xxxx
-   
 
-function simulate(sim_id)
+#########################
+# Function to get character tip data from history_df
+#########################
+
+function get_tip_data(history_df,num_regions)
+    tip_range_df      = filter([:extinct_status, :split_status] => (l, v) -> ismissing(l) && ismissing(v), history_df) # get tip state information
+    tip_character_dat = Matrix{Any}(undef, nrow(tip_range_df), num_regions+1) # empty matrix to store tip state and tip label 
+    for i in 1:nrow(tip_range_df)
+        region_arr = deepcopy([k for (k,v) in ranges_inv if v==tip_range_df.final_state[i]][1]) # region presence/absence that correspond to range in range_inv
+        tip_character_dat[i,1] = tip_range_df.idx[i] # assign tip index 
+        for j in 1:num_regions
+            tip_character_dat[i,(j+1)] = region_arr[j] # assign region presence/absence
+        end
+    end
+    ans = DataFrame(tip_character_dat,:auto) #convert to dataframe
+    return(ans)
+end
+
+#########################
+# Write Newick string from history_df
+#########################
+
+function write_newick(history_df)
+    newick_str   = "" # initialize an empty string
+    #
+    # starting from the root branch 
+    if ismissing(history_df.split_status[1]) # if the root branch survive till present without any speciation
+        newick_str = "(sp." * string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
+    else
+        if history_df.split_status[1] == 1 # if the root branch ends with a speciation event, do (branch2., branch3.):length_1
+            newick_str = "(branch2.,branch3.):" * string(history_df.branch_length[1])
+        elseif history_df.split_status[1] == 0 # if the root branch ends with a extinction event
+            newick_str = "(sp." * string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
+        end
+    end
+
+    # loop over branches descending from the root branch
+    for i in 2:nrow(history_df)
+        if ismissing(history_df.split_status[i]) # if branch i is a tip branch
+            prev_label  = "branch"*string(i)*"."
+            next_label  = "sp." * string(i) * ":" * string(history_df.branch_length[i])
+            newick_str = replace(newick_str, prev_label => next_label)
+        else # if branch i is not a tip branch
+            if history_df.split_status[i] == 1 # if branch i ends with a speciation event, replace string i with its child indexes j,k e.g. "branchi." => "(branchj.,branchk.):length_i"
+                prev_label = "branch"*string(i)*"."
+                next_label = "(" * "branch"*string(history_df.child_1_idx[i]) * "." * "," * "branch"*string(history_df.child_2_idx[i]) * "." * "):" * string(history_df.branch_length[i])
+                newick_str = replace(newick_str,prev_label => next_label)
+            elseif history_df.split_status[i] == 0 # if branch i ends with an extinction event
+                prev_label = "branch"*string(i)*"."
+                next_label = "sp." * string(i) * ":" * string(history_df.branch_length[i])
+                newick_str = replace(newick_str,prev_label => next_label)
+            end
+        end 
+    end
+    ans = newick_str * ";"
+    return(ans)
+end
+
+#########################
+# Simulate a single tree
+#########################
+
+function simulate(sim_num)
     # print info
-    println("calling simulate(" * sim_id * ")")
-
+    println("calling simulate(" * string(sim_num) * ")")
     # look-up table of ranges -> integers
     global ranges_inv
     # dataset dimensions
     global num_regions, num_ranges
     # simulation identifiers
-    global sim_id, out_dir, out_path, out_prefix
-    # system variables
+    global out_dir, out_path, out_prefix
+    # # system variables
     global timebin
 
     # set up containers
-    num_species_per_range = fill(0, num_ranges)
-    num_species_per_region = fill(0, num_regions)
+    num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
+    num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
+    # P.S. the entries for num_species_per_region and num_species_per_range will be updated at each time step
+    # since rates only depend on n_i at the current time, not past times. 
 
     ###########################################
     # # Simulate events on tree (set up)
@@ -566,22 +583,35 @@ function simulate(sim_id)
     num_alive_lineage                  = 1; # Start with one species (stem branch)
     
     ### sim_geosse (standard geosse)
-    rho_w = 1;
-    rho_e = 1;
-    rho_d = 1;
+    # rho_w = 1;
+    # rho_e = 1;
+    # rho_d = 1;
+    # rho_b = 1;
+
+     ### sim7 (lemma 3)
+    rho_w = 1.75746;
+    rho_e = 0.01;
+    rho_d = 0.01;
     rho_b = 1;
 
     ### sim_geosse (standard geosse)
-    w_d      = 0;
-    e_d      = 0;
-    d_d_home = 0;
-    d_d_away = 0;
-    b_d      = 0;
+    # w_d      = 0;
+    # e_d      = 0;
+    # d_d_home = 0;
+    # d_d_away = 0;
+    # b_d      = 0;
+
+    ### sim7 (lemma 3)
+    w_d      = -1;
+    e_d      = 2;
+    d_d_home = -1;
+    d_d_away = -1;
+    b_d      = -1;
 
     # model
     model        = "log";
-    only_density = false; # including other density-independent factors when computing rates 
-    # only_density = true; # just for testing the output, for easier computation since density_indep rates = 1
+    # only_density = false; # including other density-independent factors when computing rates 
+    only_density = true; # including other density-independent factors when computing rates 
     indep_model  = "geosse";
     
     
@@ -589,12 +619,9 @@ function simulate(sim_id)
     # Update event at root node
     ##########################
     num_species_per_range[start_range]      = 1;
-    # num_species_per_range = [1,0,0,1,0,0,0]; # for testing total rate is computed correctly
     range_key_root                          = [k for (k,v) in ranges_inv if v==start_range]; #range key that correspond to range label at the root e.g. (1,1,0) for label 4
     reg_idx_root                            = findall(range_key_root[1] .==1 ); # find the region indexes that correspond to that range at the root e.g. region_ind = 1,2 for range (1,1,0)
     num_species_per_region[reg_idx_root]    .= 1; # update the number of species currently alive in each region e.g. 1 species with range {A,B} means 1 species in A and 1 species in B
-    # num_species_per_region = [2,1,0]; # for testing total rate is computed correctly
-    
     #
     range_count_history  = [] # record num_species_per_range across time  
     region_count_history = [] # record num_species_per_region across time 
@@ -607,11 +634,11 @@ function simulate(sim_id)
     region_count_history[1] = insert!(Float64[x for x in region_count_history[1]],1,start_time)
 
     # create array of vectors containing information about num_species across regions in cts time
-    timebin                 = deepcopy(parse(Int,timebin)) # convert string (from args) to int
-    cts_time_pts            = collect(range(0,max_time,length=timebin)) # continuos time points according to timebin
+    timebin_int             = deepcopy(parse(Int,timebin)) # convert string (from args) to int
+    cts_time_pts            = collect(range(0,max_time,length=timebin_int)) # continuos time points according to timebin
 
     species_cts_time_region = [] # initialize array of vectors containing information about num_species across regions in cts time
-    for i in 1:timebin
+    for i in 1:timebin_int
         added_vec     = fill(missing,num_regions)
         added_vec_mod = Union{Any,Missing}[added_vec...] # allow another value to be added to a vector that contains missing type
         insert!(added_vec_mod,1,cts_time_pts[i]) # insert each continuous time point to each vector
@@ -621,7 +648,7 @@ function simulate(sim_id)
     species_cts_time_region[1][2:(num_regions+1)]=deepcopy(num_species_per_region)
     #
     species_cts_time_range = [] # initialize array of vectors containing information about num_species across ranges in cts time
-    for i in 1:timebin
+    for i in 1:timebin_int
         added_vec     = fill(missing,num_ranges)
         added_vec_mod = Union{Any,Missing}[added_vec...] # allow another value to be added to a vector that contains missing type
         insert!(added_vec_mod,1,cts_time_pts[i]) # insert each continuous time point to each vector
@@ -630,10 +657,8 @@ function simulate(sim_id)
     end 
     species_cts_time_range[1][2:(num_ranges+1)]=deepcopy(num_species_per_range)
    
-    ## Aug 20: Tested loop for computing total sum of rates across all ranges. 
-    ## Aug 23: Tested loop for computing w_total,e_total,d_total working, using the lookup table
     
-    global curr_time = start_time; # Initialize current time of simulation p.s. time starts from 0 (past)
+    curr_time = start_time; # Initialize current time of simulation p.s. time starts from 0 (past)
     ###############################################
     # Dataframe to record parent-child relationships 
     ###############################################
@@ -643,9 +668,7 @@ function simulate(sim_id)
     # branch_length = length of branch label idx (time_end - time_start), child_1_idx = idx of 1st child (missing if no speciation), child_2_idx = idx of 2nd child (missing if no speciation)
     history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = []) 
     push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
-    # history_df[1,:time_end]=1   
-    # println("example df = ",history_df)
-    # xxx
+
     
     ###############################################
     # Dataframe to record anagenetic transitions (local extinction on widespread range or dispersal) 
@@ -653,7 +676,7 @@ function simulate(sim_id)
     # idx = branch label associated with the event, time = time when the event occurs 
     # from_state = range state before the event, to_state = range state after the event 
     anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
-    
+    #
     while do_simulation == true 
         #############################################
         # # get total sum of rates given the number of currently alive lineages
@@ -689,20 +712,13 @@ function simulate(sim_id)
                 if reg_away != Int64[] # if the species in range i is not already widespread in all regions 
                     for k in 1:length(reg_away)
                         # if  all(!,idx_match_d) # if that n_j and n_k does not exist yet, compute the rate and store in lookup_d
-                            disp_rate = rate_d(rho_d,reg_idx[j],reg_away[k],d_d_home,d_d_away,only_density,indep_model,model) # compute dispersal rate from home to away
+                            disp_rate = rate_d(rho_d,num_species_per_region,reg_idx[j],reg_away[k],d_d_home,d_d_away,only_density,indep_model,model) # compute dispersal rate from home to away
                             # compute N_i * d_jk where i = range state, and j in i, k not in i
                             prod_ni_dik = num_species_per_range[i]*disp_rate 
                             d_total += prod_ni_dik  # e.g. for range {A,B}, d_AB_j = n_AB*(d_A_C + d_B_C) or d_A_j = n_A*(d_A_B + d_A_C)
                             # append each state-event type to state_event, along with its column name
                             push!(state_event_col_name,(i,"d",reg_idx[j],reg_away[k])) # e.g. (1,"d",1,2) denotes N_A * d_AB or (4,"d",1,3) denotes N_AB * d_AC
                             append!(state_event_tot_rate,prod_ni_dik)
-                        # else # if already exist, recall rate from lookup_d
-                        #     prod_ni_dik = lookup_d.relative_dispersal_ij[findall(idx_match_d .== 1)][1]
-                        #     d_total += prod_ni_dik
-                        #     # append each state-event type to state_event, along with its column name
-                        #     push!(state_event_col_name,(i,"d",reg_idx[j],reg_away[k]))
-                        #     append!(state_event_tot_rate,prod_ni_dik)
-                        # end
                     end
                 else # if already widepread in all regions
                     prod_ni_dik = num_species_per_range[i]*0  
@@ -721,23 +737,15 @@ function simulate(sim_id)
                 for k in 1:num_left_splits # e.g. for range {A,B,C}, can have left range = {A,B} or left_range = {A} (but not considering their change in orientation)
                     left_range  = evt_b[range_key[1]][k] 
                     right_range = range_key[1] - left_range
-                    # # Note: 26 Aug, have not added option to push to lookup table for future references
-                    # # idx_match_b = (lookup_b.ancestral_range .== range_key[1]) .& (lookup_b.left_range .== left_range) .& (lookup_b.right_range .== right_range)
                     #
                     # compute N_i * b_leftrange_right_range where leftrange U rightrange = i
-                    prod_ni_b = num_species_per_range[i]*rate_b(rho_b,left_range,right_range,b_d,only_density,indep_model,model)
+                    prod_ni_b = num_species_per_range[i]*rate_b(rho_b,num_species_per_region,left_range,right_range,b_d,only_density,indep_model,model)
                     b_total +=  prod_ni_b # e.g. i = {A,B}, then its N_AB*(b_A_B).agreed: no left-right orientation considered.
                     # append each state-event type to state_event, along with its column name
                     left_range_id = [v for (k,v) in ranges_inv if k==left_range] # e.g. 1 for range [1,0,0]
                     right_range_id = [v for (k,v) in ranges_inv if k==right_range]
                     push!(state_event_col_name,(i,"b",left_range_id[1],right_range_id[1])) # e.g. (4,"b",1,2) denotes N_AB * b_A_B
                     append!(state_event_tot_rate,prod_ni_b)
-                    # # # push to the lookup table
-                    # # added_row = [range_key,left_range,right_range]
-                    # # for num_r in 1:num_regions
-                    #     # added_row = vcat(added_row,num_species_per_region[num_r])
-                    # # end
-                    # # push!(lookup_b,added_row)
                 end
             end
         end
@@ -752,9 +760,8 @@ function simulate(sim_id)
         # # draw time to next event
         #############################################
         wait_time = rand(Exponential(1/total_rate),1)[1] # draw waiting time till a next event 
-        global curr_time += wait_time # update current time 
-        # println("current time ", curr_time)
-        # println(wait_time)
+        #
+        curr_time += wait_time # update current time 
         #
         #############################################
         # # sampling next event type and associated state at the updated curr_time 
@@ -766,7 +773,6 @@ function simulate(sim_id)
             next_event = Tuple{Any,Any,Any}[] 
             next_state = zeros(Int64,0)
             for move in 1:length(state_event_tot_prob) # sampling from probability distribution
-                # global rand_u = rand_u - state_event_tot_prob[move]
                 rand_u = rand_u - state_event_tot_prob[move]
                 if rand_u <0 # we have found over next event type and state associated with the event type 
                     push!(next_event,state_event_col_name[move][2:4]) # find the next event type
@@ -774,17 +780,6 @@ function simulate(sim_id)
                     break
                 end
             end 
-            # # Aug 30: checked it's working as intended
-            # # p.s. for range state and event type that is not possible (e.g. N_A with between-region), this is not recorded
-            # # in state_event_col_name and state_event_tot_rate (state_event_tot_rate)
-    
-            # println("name =", state_event_col_name)
-            # println("num species range = ",num_species_per_range)
-            # println("next event = ",next_event[1])
-            # println("next_state = ",next_state[1])
-            # println("event type = ",next_event[1][1])
-            # xxx
-    
             #############################################
             # # assign the next event type to a particular alive lineage that are available 
             #############################################
@@ -798,6 +793,7 @@ function simulate(sim_id)
             # println("num species per region",num_species_per_region)
             # println("chosen state = ",next_state[1])
             # println("next event = ",next_event[1])
+            # xxx
     
             row_idx    = intersect(findall(ismissing,history_df.extinct_status),findall(ismissing,history_df.split_status),
                                 findall(history_df.final_state .== next_state[1])) 
@@ -835,10 +831,6 @@ function simulate(sim_id)
                 history_df[[row_chosen],:child_1_idx]    .= deepcopy(max_idx+1)
                 history_df[[row_chosen],:child_2_idx]    .= deepcopy(max_idx+2)
                 history_df[[row_chosen],:event_type]     .= "w"
-                # println(row_chosen)
-                # println(history_df)
-                # println(history_df[row_chosen,:time_end])
-                # xxx
             elseif next_event[1][1] == "e" && next_state[1] > num_regions # if the next event is extinction on a branch with widespread range (Sep 5: already checked)
                 # update the chosen branch's status 
                 original_range  = [k for (k,v) in ranges_inv if v==next_state[1]] # the original range of the branch before the extinction e.g. [[1,1,0]]
@@ -847,17 +839,11 @@ function simulate(sim_id)
                 new_range = [v for v in possible_ranges if v != lost_range] # the new range for this branch after the event 
                 new_label = [v for (k,v) in ranges_inv if k==new_range[1]][1] # the new label e.g. 1 for range [1,0,0] or 7 for [1,1,1]
                 #
-                # println(history_df)
                 # assign the new range label to that branch idx (the branch is still in pool for either speciation or extinction)
                 history_df[[row_chosen],:final_state]          .= new_label 
                 # record the anagenetic change on that branch
                 push!(anagen_df,(history_df[[row_chosen],:idx][1],curr_time,next_state[1],new_label))
                 #
-                # println("next event is extinction")
-                # println(history_df)
-                # println(anagen_df)
-                # println(next_event[1][2])
-                # xxx
             elseif next_event[1][1] == "e" && next_state[1] <= num_regions # if the next event is extinction on a branch with endemic range (Sep 5: already checked)
                 # update the chosen branch's status 
                 history_df[[row_chosen],:time_end]       .= curr_time
@@ -865,8 +851,6 @@ function simulate(sim_id)
                 history_df[[row_chosen],:split_status]   .= 0
                 history_df[[row_chosen],:branch_length]  .= curr_time - deepcopy(history_df[[row_chosen],:time_start][1])
                 history_df[[row_chosen],:event_type]     .= "e"
-                # println(history_df)
-                # xxx
             elseif next_event[1][1] == "d" # if the next event is dispersal (Sep 6: already checked)
                 # update the chosen branch's status 
                 original_range  = [k for (k,v) in ranges_inv if v==next_state[1]] # original range before dispersal event 
@@ -883,16 +867,6 @@ function simulate(sim_id)
                 # record the anagenetic change on that branch
                 push!(anagen_df,(history_df[[row_chosen],:idx][1],curr_time,next_state[1],new_label))
                 #
-                #  println("this is a dispersal event")
-                #  println("current state = ", next_state[1])
-                #  println("next event = ", next_event[1])
-                #  println("original range = ", original_range)
-                #  println("possible range = ", possible_ranges)
-                #  println("new range = ",new_range)
-                #  println("new label = ", new_label)
-                #  println("history = ",history_df)
-                #  println("anagenetic = ",anagen_df)
-                #  xxx
             elseif next_event[1][1] == "b" # if the next event is between-region speciation (Sep 6: already checked)
                 # println("history before = ",history_df)
                 max_idx = maximum(history_df.idx) # find the maximum idx from current recoded branch labels in history_df
@@ -908,11 +882,6 @@ function simulate(sim_id)
                 history_df[[row_chosen],:child_2_idx]    .= deepcopy(max_idx+2)
                 history_df[[row_chosen],:event_type]     .= "b"
                 #
-                # println("this is between-region speciation")
-                # println("event type = ",next_event[1] )
-                # println("parent state = ",next_state[1])
-                # println("history after = ",history_df)
-                # xxx
             end
             
             ############################
@@ -924,7 +893,7 @@ function simulate(sim_id)
                 end 
                  
                 for j in 1:length(chosen_time)
-                    global species_cts_time_region[chosen_time[j]][2:(num_regions+1)] = deepcopy(num_species_per_region)
+                    species_cts_time_region[chosen_time[j]][2:(num_regions+1)] = deepcopy(num_species_per_region)
                 end
             
             ############################
@@ -936,18 +905,16 @@ function simulate(sim_id)
                 end 
                                   
                 for j in 1:length(chosen_time)
-                    global species_cts_time_range[chosen_time[j]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
+                    species_cts_time_range[chosen_time[j]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
                 end
 
             ############################
-            # # update num_species_per_region and num_species_per_range following an event (Sep 6: already checked)
+            # # update num_species_per_region and num_species_per_range following an event
             ############################
-            # println("num_species before = ",num_species_per_range)
-            # println("num_species region before = ",num_species_per_region)
             # update num_species_per_range following the previous event 
             for i in 1:num_ranges
                 count_row = count(row -> row.final_state .==i && ismissing(row.extinct_status) && ismissing(row.split_status), eachrow(history_df))
-                global num_species_per_range[i] = copy(count_row)
+                num_species_per_range[i] = copy(count_row)
             end
             # update num_species_per_region following the previous event 
             new_species_count = fill(0, num_regions)
@@ -962,7 +929,7 @@ function simulate(sim_id)
                 end
             end
 
-            global num_species_per_region = copy(new_species_count) # update species count in each region for the next event iteration
+            num_species_per_region = copy(new_species_count) # update species count in each region for the next event iteration
             # record num_species_per_region and num_species_per_range for this time step
             push!(range_count_history,deepcopy(num_species_per_range))
             range_count_history[end] = insert!(Float64[x for x in range_count_history[end]] ,1,curr_time)
@@ -973,19 +940,6 @@ function simulate(sim_id)
             #
             # update the number of currently alive lineages 
             global num_alive_lineage    = sum(num_species_per_range)
-            # println("num alive species ",num_alive_lineage)
-            # println("current time ",curr_time )
-            # println("num species per range ",num_species_per_range)
-            #
-            # println("current history = ",history_df)
-            # println("anagen history = ",anagen_df)
-            # println("num_species after = ",num_species_per_range)
-            # println("num_species region after = ",num_species_per_region)
-            # println("history region count = ", region_count_history)
-            # println("history range count = ", range_count_history)
-            # println("num alive lineage = ",num_alive_lineage)
-            # xxx 
-
         end
     #################################
     # # check if we stop simulation
@@ -993,14 +947,14 @@ function simulate(sim_id)
     
         ### Non tree extinction case
         if stop_condition == "time" && curr_time >= max_time && any(x -> x != 0, num_species_per_range)  # if condition on max_time and we don't have tree extinction
-            global do_simulation = false
+            do_simulation = false
         elseif stop_condition == "numtaxa" && num_alive_lineage >= max_taxa && any(x -> x != 0, num_species_per_range)  # if condition on max_taxa and we don't have tree extinction
-            global do_simulation = false
+            do_simulation = false
         ### Tree extinction case
         elseif all(x -> x == 0, num_species_per_range) && resimulate == false # we have tree extinction and resimulate == false
-            global do_simulation = false 
+            do_simulation = false 
         elseif all(x -> x == 0, num_species_per_range) && resimulate == true # we have tree extinction and  resimulate == true 
-            global do_simulation = true
+            do_simulation = true
         end
 
     #################################
@@ -1015,45 +969,39 @@ function simulate(sim_id)
             # println(which_lineages)
             for i in 1:length(which_lineages)
                 history_df.time_end[which_lineages[i]]      = copy(max_time) # extend their external branches to max time
-                # println(deepcopy(history_df.time_end[which_lineages[i]][1]))
-                # println(deepcopy(history_df.time_start[which_lineages[i]][1]))
-                # xxx
                 history_df.branch_length[which_lineages[i]] = max_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
             end
-            # println(history_df)
-            # xxx
-            # 
             # Fill the remaining rows with missing value of species_cts_time_region with num_spec_per_region from previous entry (since we just extend branch lengths here)
             missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_region])
             for i in 1:length(missing_rows)
-                global species_cts_time_region[missing_rows[i]][2:(num_regions+1)] = deepcopy(num_species_per_region)
+                species_cts_time_region[missing_rows[i]][2:(num_regions+1)] = deepcopy(num_species_per_region)
             end
             # Fill the remaining rows with missing value of  species_cts_time_range with num_spec_per_range from previous entry (since we just extend branch lengths here)
             missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_range])
             for i in 1:length(missing_rows)
-                global species_cts_time_range[missing_rows[i]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
+                species_cts_time_range[missing_rows[i]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
             end
         elseif do_simulation == false && any(x -> x != 0, num_species_per_range) && stop_condition == "numtaxa" # if we don't have tree extinction and condition = "numtaxa"
             break
         elseif do_simulation == false && all(x -> x == 0, num_species_per_range) # if we have tree extinction and resimulate == false
             println("tree extinction")
         elseif do_simulation == true && all(x -> x == 0, num_species_per_range)  # if we have tree extinction and resimulate == true
-            println("tree extinction, " * "resimulate tree " * sim_id)
+            println("tree extinction, " * "resimulate tree " * string(sim_num))
             # restart everything
-            global num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
-            global num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
-            global start_time                         = 0.0; # Start time of the simulation (0 = past time)
+            num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
+            num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
+            start_time                         = 0.0; # Start time of the simulation (0 = past time)
             # global start_range                        = floor(Int64,rand(Uniform(1,num_ranges))); # Starting range state at root node e.g. 1,2,...,7 for 3 region
-            global start_range                        = 1;
-            global num_alive_lineage                  = 1; # Start with one species (stem branch)
+            start_range                        = 1;
+            num_alive_lineage                  = 1; # Start with one species (stem branch)
             num_species_per_range[start_range] = 1;
             #
-            global range_key_root                          = [k for (k,v) in ranges_inv if v==start_range]; #range key that correspond to range label at the root e.g. (1,1,0) for label 4
-            global reg_idx_root                            = findall(range_key_root[1] .==1 ); # find the region indexes that correspond to that range at the root e.g. region_ind = 1,2 for range (1,1,0)
+            range_key_root                          = [k for (k,v) in ranges_inv if v==start_range]; #range key that correspond to range label at the root e.g. (1,1,0) for label 4
+            reg_idx_root                            = findall(range_key_root[1] .==1 ); # find the region indexes that correspond to that range at the root e.g. region_ind = 1,2 for range (1,1,0)
             num_species_per_region[reg_idx_root]    .= 1; # update the number of species currently alive in each region e.g. 1 species with range {A,B} means 1 species in A and 1 species in B
             #
-            global range_count_history  = [] # record num_species_per_range across time  
-            global region_count_history = [] # record num_species_per_region across time 
+            range_count_history  = [] # record num_species_per_range across time  
+            region_count_history = [] # record num_species_per_region across time 
             #
             push!(range_count_history,deepcopy(num_species_per_range))
             range_count_history[1] = insert!(Float64[x for x in range_count_history[1]] ,1,start_time)
@@ -1061,20 +1009,20 @@ function simulate(sim_id)
             push!(region_count_history,deepcopy(num_species_per_region))
             region_count_history[1] = insert!(Float64[x for x in region_count_history[1]] ,1,start_time)
             #
-            global species_cts_time_region = [] # initialize array of vectors containing information about num_species across regions in cts time
-            for i in 1:timebin
-                global added_vec     = fill(missing,num_regions)
-                global added_vec_mod = Union{Any,Missing}[added_vec...] # allow another value to be added to a vector that contains missing type
+            species_cts_time_region = [] # initialize array of vectors containing information about num_species across regions in cts time
+            for i in 1:timebin_int
+                added_vec     = fill(missing,num_regions)
+                added_vec_mod = Union{Any,Missing}[added_vec...] # allow another value to be added to a vector that contains missing type
                 insert!(added_vec_mod,1,cts_time_pts[i]) # insert each continuous time point to each vector
                 #
                 push!(species_cts_time_region,added_vec_mod)
             end 
             species_cts_time_region[1][2:(num_regions+1)]= deepcopy(num_species_per_region)
             #
-            global species_cts_time_range = [] # initialize array of vectors containing information about num_species across ranges in cts time
-            for i in 1:timebin
-                global added_vec     = fill(missing,num_ranges)
-                global added_vec_mod = Union{Any,Missing}[added_vec...] # allow another value to be added to a vector that contains missing type
+            species_cts_time_range = [] # initialize array of vectors containing information about num_species across ranges in cts time
+            for i in 1:timebin_int
+                added_vec     = fill(missing,num_ranges)
+                added_vec_mod = Union{Any,Missing}[added_vec...] # allow another value to be added to a vector that contains missing type
                 insert!(added_vec_mod,1,cts_time_pts[i]) # insert each continuous time point to each vector
                 #
                 push!(species_cts_time_range,added_vec_mod)
@@ -1082,11 +1030,10 @@ function simulate(sim_id)
             species_cts_time_range[1][2:(num_ranges+1)]=deepcopy(num_species_per_range)        
             #
             curr_time = start_time; # Initialize current time of simulation p.s. time starts from 0 (past)
-            global history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = []) 
+            history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = []) 
             push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
-            global anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
+            anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
         end
-        
     end
 
     ## Enable this if want to validate the simulation
@@ -1101,16 +1048,7 @@ function simulate(sim_id)
     #########################
     # Character data at tips 
     #########################
-    tip_range_df      = filter([:extinct_status, :split_status] => (l, v) -> ismissing(l) && ismissing(v), history_df) # get tip state information
-    tip_character_dat = Matrix{Any}(undef, nrow(tip_range_df), num_regions+1) # empty matrix to store tip state and tip label 
-    for i in 1:nrow(tip_range_df)
-        region_arr = deepcopy([k for (k,v) in ranges_inv if v==tip_range_df.final_state[i]][1]) # region presence/absence that correspond to range in range_inv
-        tip_character_dat[i,1] = tip_range_df.idx[i] # assign tip index 
-        for j in 1:num_regions
-            tip_character_dat[i,(j+1)] = region_arr[j] # assign region presence/absence
-        end
-    end
-    tip_character_df = DataFrame(tip_character_dat,:auto) #convert to dataframe
+    tip_character_df = get_tip_data(history_df,num_regions)
 
     #########################
     # Rate labels and other summary statistics
@@ -1121,65 +1059,24 @@ function simulate(sim_id)
     #########################
     # Write Newick string 
     #########################
-    newick_str   = "" # initialize an empty string
-    #
-    # starting from the root branch 
-    if ismissing(history_df.split_status[1]) # if the root branch survive till present without any speciation
-        global newick_str = "(sp." * string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
-    else
-        if history_df.split_status[1] == 1 # if the root branch ends with a speciation event, do (branch2., branch3.):length_1
-            global newick_str = "(branch2.,branch3.):" * string(history_df.branch_length[1])
-        elseif history_df.split_status[1] == 0 # if the root branch ends with a extinction event
-            global newick_str = "(sp." * string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
-        end
-    end
-
-    # loop over branches descending from the root branch
-    for i in 2:nrow(history_df)
-        if ismissing(history_df.split_status[i]) # if branch i is a tip branch
-            prev_label  = "branch"*string(i)*"."
-            next_label  = "sp." * string(i) * ":" * string(history_df.branch_length[i])
-            global newick_str = replace(newick_str, prev_label => next_label)
-        else # if branch i is not a tip branch
-            if history_df.split_status[i] == 1 # if branch i ends with a speciation event, replace string i with its child indexes j,k e.g. "branchi." => "(branchj.,branchk.):length_i"
-                prev_label = "branch"*string(i)*"."
-                next_label = "(" * "branch"*string(history_df.child_1_idx[i]) * "." * "," * "branch"*string(history_df.child_2_idx[i]) * "." * "):" * string(history_df.branch_length[i])
-                global newick_str = replace(newick_str,prev_label => next_label)
-            elseif history_df.split_status[i] == 0 # if branch i ends with an extinction event
-                prev_label = "branch"*string(i)*"."
-                next_label = "sp." * string(i) * ":" * string(history_df.branch_length[i])
-                global newick_str = replace(newick_str,prev_label => next_label)
-            end
-        end 
-    end
-    global newick_str = newick_str * ";"
-    # println("newick = ",newick_str)
-    # xxx
-    # end
+    newick_str = write_newick(history_df)
 
     ################## 
     # # Write outputs
     #################
-    
-    # # write tree as a newick string
-    # println("newick = ",newick_str)
 
-    tree_file = joinpath(out_dir,out_prefix *"."*sim_id * ".tre")
+    tree_file = joinpath(out_dir,out_prefix *"."*string(sim_num)* ".tre")
 
     # Ensure the output directory exists
     isdir(out_dir) || mkpath(out_dir)
 
-    println("done simulating tree "*  sim_id)
+    println("done simulating tree "*  string(sim_num))
     open(tree_file,"w") do file
         write(file,newick_str)
     end
     
     # # write tip data to file (as csv)
-    CSV.write(joinpath(out_dir,out_prefix*"."*sim_id*".dat.csv"),tip_character_df;header=false)
-    # println(history_df)
-    # println(tip_range_df)
-    # println(tip_character_dat)
-    # # write parameters to file
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),tip_character_df;header=false)
     
     if num_regions == 2
        # # convert each summary statistics to data frame 
@@ -1212,22 +1109,24 @@ function simulate(sim_id)
                                 range_4 = [x[5] for x in range_count_history],range_5 = [x[6] for x in range_count_history],
                                 range_6 = [x[7] for x in range_count_history],range_7 = [x[8] for x in range_count_history])   
     end
- 
+    
     # # write summary statistics and rates to file
-    CSV.write(joinpath(out_dir,out_prefix*"."*sim_id*".labels.csv"),param_label_df) # write rate parameters and number of alive tips
-    CSV.write(joinpath(out_dir,"anagenetic_changes_tree_"*sim_id*".csv"),anagen_df) # write anagenetic history along branches over event times 
-    CSV.write(joinpath(out_dir,"species_count_region_tree_"*sim_id*".csv"),dat_reg) # write species count across regions over event times
-    CSV.write(joinpath(out_dir,"species_count_range_tree_"*sim_id*".csv"),dat_range) # write species count across ranges over event times
-    CSV.write(joinpath(out_dir,"cts_species_count_region_tree_"*sim_id*".csv"),dat_reg_cts) # write species count across regions over cts times
-    CSV.write(joinpath(out_dir,"cts_species_count_range_tree_"*sim_id*".csv"),dat_range_cts) # write species count across ranges over cts times
-    CSV.write(joinpath(out_dir,"cladogenetic event history_"*sim_id*".csv"),history_df) # write cladogenetic event history over event times 
-# end
-
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".labels.csv"),param_label_df) # write rate parameters and number of alive tips
+    CSV.write(joinpath(out_dir,"anagenetic_changes_tree_"*string(sim_num)*".csv"),anagen_df) # write anagenetic history along branches over event times 
+    CSV.write(joinpath(out_dir,"species_count_region_tree_"*string(sim_num)*".csv"),dat_reg) # write species count across regions over event times
+    CSV.write(joinpath(out_dir,"species_count_range_tree_"*string(sim_num)*".csv"),dat_range) # write species count across ranges over event times
+    CSV.write(joinpath(out_dir,"cts_species_count_region_tree_"*string(sim_num)*".csv"),dat_reg_cts) # write species count across regions over cts times
+    CSV.write(joinpath(out_dir,"cts_species_count_range_tree_"*string(sim_num)*".csv"),dat_range_cts) # write species count across ranges over cts times
+    CSV.write(joinpath(out_dir,"cladogenetic event history_"*string(sim_num)*".csv"),history_df) # write cladogenetic event history over event times 
 end
 
-for i in 1:10
+#########################
+# Simulate a set of trees
+#########################
+
+for i in start_idx:(start_idx + batch_size - 1)
     println("Simulation ", i)
-    simulate(i) #, event_dictionary)
+    simulate(i)
 end
 
 
