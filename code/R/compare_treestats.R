@@ -9,7 +9,9 @@ library(ape)
 fp       = "/Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/"
 in_fp    = paste0(fp,"data/sim_geosse/diversitree/") 
 in_jl_fp = paste0(fp,"data/sim_geosse/julia/")
+# in_jl_fp = paste0(fp,"data/sim_geosse/julia_false/")
 out_fp   = paste0(fp,"plot/sim_geosse/")
+# out_fp   = paste0(fp,"plot/sim_geosse_false/")
 
 ##### INPUT #####
 #################
@@ -33,68 +35,76 @@ for (i in 1:1000){
   # remove the stem branch to match with diversitree simulation
   phy_dat$root.edge = 0
   #
-  balance_jl_df[i,] = c(colless(phy_dat),colless_corr(phy_dat),colless_quad(phy_dat),
-                        sackin(phy_dat),beta_statistic(phy_dat),stairs(phy_dat),stairs2(phy_dat),
-                        blum(phy_dat,normalization = T),rogers(phy_dat,normalization = "tips"),
-                        pitchforks(phy_dat,normalization = "tips"))
-  #
-  length_jl_df[i,]  = c(crown_age(phy_dat),treestats::gamma_statistic(phy_dat),pigot_rho(phy_dat))
+  if (phy_dat$Nnode > 2){ #ignore extant-only julia trees with <= 2 tips since can't compute beta with only 2 taxa
+    balance_jl_df[i,] = c(colless(phy_dat),colless_corr(phy_dat),colless_quad(phy_dat),
+                          sackin(phy_dat),beta_statistic(phy_dat),stairs(phy_dat),stairs2(phy_dat),
+                          blum(phy_dat,normalization = T),rogers(phy_dat,normalization = "tips"),
+                          pitchforks(phy_dat,normalization = "tips"))
+    #
+    length_jl_df[i,]  = c(crown_age(phy_dat),treestats::gamma_statistic(phy_dat),pigot_rho(phy_dat))
+  }
+  balance_jl_df = na.omit(balance_jl_df) # remove rows with na values
+  length_jl_df  = na.omit(length_jl_df)  # remove rows with na values
 }
+
+diversitree_dat = diversitree_dat[-(1:(numsim-nrow(balance_jl_df))),] #adjust numsim accordingly to match num rows from julia dataframe
+diversitree_length_dat = diversitree_length_dat[-(1:(numsim-nrow(length_jl_df))),] #adjust numsim accordingly to match num rows from julia dataframe
+
 
 ##### SUMMARY ###
 #################
 
 # colless stat
-colless_dat = data.frame(colless_type=sort(rep(c("julia","diversitree"),numsim)), 
+colless_dat = data.frame(colless_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                         value = c(diversitree_dat$colless,balance_jl_df$colless))
 
 # colless_corr stat
-colless_corr_dat = data.frame(colless_corr_type=sort(rep(c("julia","diversitree"),numsim)), 
+colless_corr_dat = data.frame(colless_corr_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                               value = c(diversitree_dat$colless_corr,balance_jl_df$colless_corr))
 
 # colless_quad stat
-colless_quad_dat = data.frame(colless_quad_type=sort(rep(c("julia","diversitree"),numsim)), 
+colless_quad_dat = data.frame(colless_quad_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                               value = c(diversitree_dat$colless_quad,balance_jl_df$colless_quad))
 
 # sackin stat
-sackin_dat = data.frame(sackin_type=sort(rep(c("julia","diversitree"),numsim)), 
+sackin_dat = data.frame(sackin_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                               value = c(diversitree_dat$sackin,balance_jl_df$sackin))
 
 # beta stat
-beta_dat = data.frame(beta_type=sort(rep(c("julia","diversitree"),numsim)), 
+beta_dat = data.frame(beta_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                         value = c(diversitree_dat$beta,balance_jl_df$beta))
 
 # stairs stat
-stairs_dat = data.frame(stairs_type=sort(rep(c("julia","diversitree"),numsim)), 
+stairs_dat = data.frame(stairs_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                       value = c(diversitree_dat$stairs,balance_jl_df$stairs))
 
 # stairs2 stat
-stairs2_dat = data.frame(stairs2_type=sort(rep(c("julia","diversitree"),numsim)), 
+stairs2_dat = data.frame(stairs2_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                         value = c(diversitree_dat$stairs2,balance_jl_df$stairs2))
 
 
 # blum stat
-blum_dat = data.frame(blum_type=sort(rep(c("julia","diversitree"),numsim)), 
+blum_dat = data.frame(blum_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                       value = c(diversitree_dat$blum_norm,balance_jl_df$blum_norm))
 
 # rogers stat
-rogers_dat = data.frame(rogers_type=sort(rep(c("julia","diversitree"),numsim)), 
+rogers_dat = data.frame(rogers_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                         value = c(diversitree_dat$rogers_norm,balance_jl_df$rogers_norm))
 
 # pitchforks stat
-pitchforks_dat = data.frame(pitchforks_type=sort(rep(c("julia","diversitree"),numsim)), 
+pitchforks_dat = data.frame(pitchforks_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                             value = c(diversitree_dat$pitchforks_norm,balance_jl_df$pitchforks_norm))
 
 # crown age stat
-crown_dat = data.frame(crown_type=sort(rep(c("julia","diversitree"),numsim)), 
+crown_dat = data.frame(crown_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                          value = c(diversitree_length_dat$crown_age,length_jl_df$crown_age))
 
 # gamma stat
-gamma_dat = data.frame(gamma_type=sort(rep(c("julia","diversitree"),numsim)), 
+gamma_dat = data.frame(gamma_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                        value = c(diversitree_length_dat$gamma,length_jl_df$gamma))
 
 # pigot_rho stat
-rho_dat = data.frame(rho_type=sort(rep(c("julia","diversitree"),numsim)), 
+rho_dat = data.frame(rho_type=sort(rep(c("julia","diversitree"),nrow(diversitree_dat))), 
                        value = c(diversitree_length_dat$pigot_rho,length_jl_df$pigot_rho))
 
 
