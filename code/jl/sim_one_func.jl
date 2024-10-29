@@ -31,20 +31,20 @@ out_dir  = out_path
 ################
 min_taxa       = 5; # Minimum number of extant taxa to simulate 
 max_taxa       = 10; # Maximum number of extant taxa to simulate
-# max_time       = 7; # Maximum simulation time 
-max_time       = 10; # Maximum simulation time 
+max_time       = 7; # Maximum simulation time 
+# max_time       = 10; # Maximum simulation time 
 stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 global resimulate = true # whether to resimulate in case of tree extinction or not
 # global timebin    = "10" # time bin for tracking number of species across region/range in continuous time 
-global timebin    = "1000" # time bin for tracking number of species across region/range in continuous time 
+global timebin    = "100" # time bin for tracking number of species across region/range in continuous time 
 
 #############
 # Model setup
 #############
 # Define state space 
-# num_regions = 2; # Number of regions 
-num_regions = 3; # Number of regions 
+num_regions = 2; # Number of regions 
+# num_regions = 3; # Number of regions 
 num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
 
 #################################################
@@ -294,8 +294,10 @@ function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,indep
             elseif indep_model == "geosse" && num_regions == 2 # standard geosse with 2 regions
                 if region_ind == 1
                     m_i_w = 1.0 
+                    # m_i_w = 0.8 
                 elseif region_ind == 2
                     m_i_w = 0.5
+                    # m_i_w = 0.3
                 end
             elseif indep_model == "geosse" && num_regions == 3 # standard geosse with 3 regions
                 if region_ind == 1
@@ -340,11 +342,11 @@ function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,indep
                     m_i_e = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 (same distribution across all regions)
             elseif indep_model == "geosse" && num_regions == 2 # standard geosse with 2 regions
                 if region_ind == 1
-                    # m_i_e = 0.2 
-                    m_i_e = 1.0
+                    m_i_e = 0.2 
+                    # m_i_e = 0.5
                 elseif region_ind == 2
-                    # m_i_e = 0.4
-                    m_i_e = 0.5
+                    m_i_e = 0.4
+                    # m_i_e = 0.2
                 end
             elseif indep_model == "geosse" && num_regions == 3 # standard geosse with 3 regions 
                 if region_ind == 1
@@ -583,35 +585,35 @@ function simulate(sim_num)
     num_alive_lineage                  = 1; # Start with one species (stem branch)
     
     ### sim_geosse (standard geosse)
-    # rho_w = 1;
-    # rho_e = 1;
-    # rho_d = 1;
-    # rho_b = 1;
-
-     ### sim7 (lemma 3)
-    rho_w = 1.75746;
-    rho_e = 0.01;
-    rho_d = 0.01;
+    rho_w = 1;
+    rho_e = 1;
+    rho_d = 1;
     rho_b = 1;
 
+     ### sim7 (lemma 3)
+    # rho_w = 1.75746;
+    # rho_e = 0.01;
+    # rho_d = 0.01;
+    # rho_b = 1;
+
     ### sim_geosse (standard geosse)
-    # w_d      = 0;
-    # e_d      = 0;
-    # d_d_home = 0;
-    # d_d_away = 0;
-    # b_d      = 0;
+    w_d      = 0;
+    e_d      = 0;
+    d_d_home = 0;
+    d_d_away = 0;
+    b_d      = 0;
 
     ### sim7 (lemma 3)
-    w_d      = -1;
-    e_d      = 2;
-    d_d_home = -1;
-    d_d_away = -1;
-    b_d      = -1;
+    # w_d      = -1;
+    # e_d      = 2;
+    # d_d_home = -1;
+    # d_d_away = -1;
+    # b_d      = -1;
 
     # model
     model        = "log";
-    # only_density = false; # including other density-independent factors when computing rates 
-    only_density = true; # including other density-independent factors when computing rates 
+    only_density = false; # including other density-independent factors when computing rates 
+    # only_density = true; # including other density-independent factors when computing rates 
     indep_model  = "geosse";
     
     
