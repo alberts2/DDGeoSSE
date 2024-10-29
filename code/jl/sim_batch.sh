@@ -3,13 +3,13 @@
 #!/usr/bin/env sh
 
 # Number of batches
-batches=2
+batches=10
 
 # Number of simulation replicates per batch
-batch_size=2
+batch_size=100
 
 # Number of parallel processes (cores) per batch
-cores=2
+cores=10
 
 # Julia arguments
 out_path=simulate
