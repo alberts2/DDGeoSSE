@@ -3,14 +3,14 @@
 # remove output files from the remote server 
 
 for i in $(seq 1 50000); do
-    rm param_label_tree_$i.labels.csv   
+    rm sim.$i.labels.csv   
     rm anagenetic_changes_tree_$i.csv 
     rm species_count_region_tree_$i.csv
     rm species_count_range_tree_$i.csv 
     rm cts_species_count_region_tree_$i.csv
     rm cts_species_count_range_tree_$i.csv 
-    rm tip_data_tree_$i.dat.csv
-    rm complete_tree_$i.tre
+    rm sim.$i.dat.csv
+    rm sim.$i.tre
     rm "cladogenetic event history_$i.csv"
 done
 
