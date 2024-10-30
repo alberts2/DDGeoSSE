@@ -31,9 +31,9 @@
         #
         # extant_tips   = read.csv(file = paste0(dat_fp,"tip_data_tree_",i,".dat.csv"),header = FALSE)[,1] # read the list of extant taxa
         extant_tips   = read.csv(file = paste0(dat_fp,"sim.",i,".dat.csv"),header = FALSE)[,1] # read the list of extant taxa
-        for (j in 1:length(extant_tips)){
-          extant_tips[j] = paste0("sp.",extant_tips[j]) # rename with sp.
-        }
+        # for (j in 1:length(extant_tips)){
+        #   extant_tips[j] = paste0("sp.",extant_tips[j]) # rename with sp.
+        # }
         extinct_tips = setdiff(complete_tree$tip.label,extant_tips) # get the list of extinct taxa
         #
         extant_tree = drop.tip(complete_tree,extinct_tips) # drop extinct taxa
