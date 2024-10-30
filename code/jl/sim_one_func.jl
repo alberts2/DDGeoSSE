@@ -2,6 +2,10 @@
 # density-dependent GeoSSE model. Tree label starts from start_idx to (start_idx + batch_size - 1)
 
 # have validated script for lemma 3 (sim7)
+# fixed bug where num_alive_lineage is not update when saved to a file
+# add randomization on only_density, model type, and start range to generate a tree 
+# remove "sp." from tree label to match with taxon label on character data
+# add header on the character data
 
 #####################
 # Load julia packages
@@ -31,8 +35,9 @@ out_dir  = out_path
 ################
 min_taxa       = 5; # Minimum number of extant taxa to simulate 
 max_taxa       = 10; # Maximum number of extant taxa to simulate
-max_time       = 7; # Maximum simulation time 
-# max_time       = 10; # Maximum simulation time 
+# max_time       = 7; # Maximum simulation time 
+# max_time       = 300; # Maximum simulation time 
+max_time       = 10; # Maximum simulation time 
 stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 global resimulate = true # whether to resimulate in case of tree extinction or not
@@ -43,8 +48,8 @@ global timebin    = "100" # time bin for tracking number of species across regio
 # Model setup
 #############
 # Define state space 
-num_regions = 2; # Number of regions 
-# num_regions = 3; # Number of regions 
+# num_regions = 2; # Number of regions 
+num_regions = 3; # Number of regions 
 num_ranges  = 2^num_regions - 1; # Number of possible ranges given num_regions
 
 #################################################
@@ -521,12 +526,12 @@ function write_newick(history_df)
     #
     # starting from the root branch 
     if ismissing(history_df.split_status[1]) # if the root branch survive till present without any speciation
-        newick_str = "(sp." * string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
+        newick_str = string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
     else
         if history_df.split_status[1] == 1 # if the root branch ends with a speciation event, do (branch2., branch3.):length_1
             newick_str = "(branch2.,branch3.):" * string(history_df.branch_length[1])
         elseif history_df.split_status[1] == 0 # if the root branch ends with a extinction event
-            newick_str = "(sp." * string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
+            newick_str = string(history_df.idx[1]) * ":" * string(history_df.branch_length[1])*")"
         end
     end
 
@@ -534,7 +539,7 @@ function write_newick(history_df)
     for i in 2:nrow(history_df)
         if ismissing(history_df.split_status[i]) # if branch i is a tip branch
             prev_label  = "branch"*string(i)*"."
-            next_label  = "sp." * string(i) * ":" * string(history_df.branch_length[i])
+            next_label  = string(i) * ":" * string(history_df.branch_length[i])
             newick_str = replace(newick_str, prev_label => next_label)
         else # if branch i is not a tip branch
             if history_df.split_status[i] == 1 # if branch i ends with a speciation event, replace string i with its child indexes j,k e.g. "branchi." => "(branchj.,branchk.):length_i"
@@ -543,7 +548,7 @@ function write_newick(history_df)
                 newick_str = replace(newick_str,prev_label => next_label)
             elseif history_df.split_status[i] == 0 # if branch i ends with an extinction event
                 prev_label = "branch"*string(i)*"."
-                next_label = "sp." * string(i) * ":" * string(history_df.branch_length[i])
+                next_label = string(i) * ":" * string(history_df.branch_length[i])
                 newick_str = replace(newick_str,prev_label => next_label)
             end
         end 
@@ -580,15 +585,21 @@ function simulate(sim_num)
     
     do_simulation                      = true; # Initial flag to continue simulating events 
     start_time                         = 0.0; # Start time of the simulation (0 = past time)
-    # start_range                        = floor(Int64,rand(Uniform(1,num_ranges))); # Starting range state at root node e.g. 1,2,...,7 for 3 region
-    start_range                        = 1;
+    start_range                        = floor(Int64,rand(Uniform(1,num_ranges))); # Starting range state at root node e.g. 1,2,...,7 for 3 region
+    # start_range                        = 1;
     num_alive_lineage                  = 1; # Start with one species (stem branch)
     
+    
+    rho_w = rand(Uniform(0.1,1));
+    rho_e = rand(Uniform(0.05,0.1));
+    rho_d = rand(Uniform(0.1,1));
+    rho_b = rand(Uniform(0.1,1));
+
     ### sim_geosse (standard geosse)
-    rho_w = 1;
-    rho_e = 1;
-    rho_d = 1;
-    rho_b = 1;
+    # rho_w = 1;
+    # rho_e = 1;
+    # rho_d = 1;
+    # rho_b = 1;
 
      ### sim7 (lemma 3)
     # rho_w = 1.75746;
@@ -597,11 +608,18 @@ function simulate(sim_num)
     # rho_b = 1;
 
     ### sim_geosse (standard geosse)
-    w_d      = 0;
-    e_d      = 0;
-    d_d_home = 0;
-    d_d_away = 0;
-    b_d      = 0;
+    # w_d      = 0;
+    # e_d      = 0;
+    # d_d_home = 0;
+    # d_d_away = 0;
+    # b_d      = 0;
+
+    w_d      = rand(Normal(-1,0.1));
+    e_d      = rand(Normal(1,0.1));
+    d_d_home = rand(Normal(-1,0.1));
+    d_d_away = rand(Normal(-1,0.1));
+    b_d      = rand(Normal(-1,0.1));
+
 
     ### sim7 (lemma 3)
     # w_d      = -1;
@@ -611,10 +629,13 @@ function simulate(sim_num)
     # b_d      = -1;
 
     # model
-    model        = "log";
-    only_density = false; # including other density-independent factors when computing rates 
+    # model        = "log";
+    model        = rand(["log","standard"]);
+    # only_density = false; # including other density-independent factors when computing rates 
     # only_density = true; # including other density-independent factors when computing rates 
-    indep_model  = "geosse";
+    only_density = rand([true,false])
+    # indep_model  = "geosse";
+    indep_model  = "time-varying";
     
     
     ##########################
@@ -941,7 +962,7 @@ function simulate(sim_num)
             region_count_history[end] = insert!(Float64[x for x in region_count_history[end]] ,1,curr_time)
             #
             # update the number of currently alive lineages 
-            global num_alive_lineage    = sum(num_species_per_range)
+            num_alive_lineage    = sum(num_species_per_range)
         end
     #################################
     # # check if we stop simulation
@@ -1051,12 +1072,18 @@ function simulate(sim_num)
     # Character data at tips 
     #########################
     tip_character_df = get_tip_data(history_df,num_regions)
-
+    if num_regions == 2
+        tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2])
+    elseif num_regions == 3
+        tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2, :region_3])
+    end
+    
     #########################
     # Rate labels and other summary statistics
     #########################
     param_label_df =  DataFrame(base_w = rho_w,base_e = rho_e,base_d = rho_d,base_b = rho_b,scalar_w = w_d,
-                                scalar_e = e_d, scalar_d_i = d_d_home, scalar_d_j = d_d_away, scalar_b = b_d, num_alive_spec = num_alive_lineage);
+                                scalar_e = e_d, scalar_d_i = d_d_home, scalar_d_j = d_d_away, scalar_b = b_d, num_alive_spec = num_alive_lineage, start_range = start_range,model = model,only_density = only_density,
+                                run_time = max_time);
     
     #########################
     # Write Newick string 
@@ -1078,7 +1105,7 @@ function simulate(sim_num)
     end
     
     # # write tip data to file (as csv)
-    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),tip_character_df;header=false)
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),tip_character_df;header=true)
     
     if num_regions == 2
        # # convert each summary statistics to data frame 
@@ -1130,5 +1157,7 @@ for i in start_idx:(start_idx + batch_size - 1)
     println("Simulation ", i)
     simulate(i)
 end
+
+exit()
 
 
