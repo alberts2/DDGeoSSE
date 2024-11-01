@@ -593,10 +593,16 @@ function simulate(sim_num)
     num_alive_lineage                  = 1; # Start with one species (stem branch)
     
     
-    rho_w = rand(Uniform(0.1,1));
-    rho_e = rand(Uniform(0.005,0.01));
-    rho_d = rand(Uniform(0.1,1));
-    rho_b = rand(Uniform(0.1,1));
+    # rho_w = rand(Uniform(0.1,1));
+    # rho_e = rand(Uniform(0.005,0.01));
+    # rho_d = rand(Uniform(0.1,1));
+    # rho_b = rand(Uniform(0.1,1));
+
+    rho_w = rand(Uniform(1,2));
+    rho_e = rand(Uniform(0.01,0.02));
+    rho_d = rand(Uniform(0.01,0.02));
+    rho_b = rand(Uniform(1,2));
+
 
     ### sim_geosse (standard geosse)
     # rho_w = 1;
@@ -617,8 +623,14 @@ function simulate(sim_num)
     # d_d_away = 0;
     # b_d      = 0;
 
+    # w_d      = rand(Normal(-1,0.4));
+    # e_d      = rand(Normal(1,0.4));
+    # d_d_home = rand(Normal(-1,0.4));
+    # d_d_away = rand(Normal(-1,0.4));
+    # b_d      = rand(Normal(-1,0.4));
+
     w_d      = rand(Normal(-1,0.4));
-    e_d      = rand(Normal(1,0.4));
+    e_d      = rand(Normal(2,0.4));
     d_d_home = rand(Normal(-1,0.4));
     d_d_away = rand(Normal(-1,0.4));
     b_d      = rand(Normal(-1,0.4));
