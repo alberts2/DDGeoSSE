@@ -6,6 +6,9 @@
 # add randomization on only_density, model type, and start range to generate a tree 
 # remove "sp." from tree label to match with taxon label on character data
 # add header on the character data
+# changed categorical label using integers (i.e. for model types, dd types etc)
+# save rate scalars in log scale
+# Convert character data at tips (multiple binary characters -> single multi-state characters)
 
 #####################
 # Load julia packages
@@ -37,7 +40,7 @@ min_taxa       = 5; # Minimum number of extant taxa to simulate
 max_taxa       = 10; # Maximum number of extant taxa to simulate
 # max_time       = 7; # Maximum simulation time 
 # max_time       = 300; # Maximum simulation time 
-max_time       = 10; # Maximum simulation time 
+max_time       = 30; # Maximum simulation time 
 stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 global resimulate = true # whether to resimulate in case of tree extinction or not
@@ -291,12 +294,12 @@ function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,indep
         ## Define rate parameters 
         rho_w = base # base rate 
         w_d   = rate_scalar # rate scalar for within-region speciation
-        if only_density == true 
+        if only_density == 1 
             m_i_w = 1 # means no density-independent factors 
-        elseif only_density == false
-            if indep_model == "time-varying"
+        elseif only_density == 0
+            if indep_model == 1
                     m_i_w = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 (same distribution across all regions) 
-            elseif indep_model == "geosse" && num_regions == 2 # standard geosse with 2 regions
+            elseif indep_model == 0 && num_regions == 2 # standard geosse with 2 regions
                 if region_ind == 1
                     m_i_w = 1.0 
                     # m_i_w = 0.8 
@@ -304,7 +307,7 @@ function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,indep
                     m_i_w = 0.5
                     # m_i_w = 0.3
                 end
-            elseif indep_model == "geosse" && num_regions == 3 # standard geosse with 3 regions
+            elseif indep_model == 0 && num_regions == 3 # standard geosse with 3 regions
                 if region_ind == 1
                     m_i_w = 1.0 
                 elseif region_ind == 2
@@ -315,9 +318,9 @@ function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,indep
             end
         end 
         ## Compute the overall rates
-        if model == "log"
+        if model == 0
             m_d_w = (log(n_i)+1)^(w_d)
-        elseif model == "standard"
+        elseif model == 1
             m_d_w = n_i^w_d
         end
         ans   = rho_w*m_i_w*m_d_w
@@ -340,12 +343,12 @@ function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,indep
         ## Define rate parameters 
         rho_e = base # base rate 
         e_d   = rate_scalar # rate scalar for extinction
-        if only_density == true 
+        if only_density == 1 
             m_i_e = 1 # means no density-independent factors 
-        elseif only_density == false
-            if indep_model == "time-varying"
+        elseif only_density == 0
+            if indep_model == 1
                     m_i_e = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 (same distribution across all regions)
-            elseif indep_model == "geosse" && num_regions == 2 # standard geosse with 2 regions
+            elseif indep_model == 0 && num_regions == 2 # standard geosse with 2 regions
                 if region_ind == 1
                     m_i_e = 0.2 
                     # m_i_e = 0.5
@@ -353,7 +356,7 @@ function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,indep
                     m_i_e = 0.4
                     # m_i_e = 0.2
                 end
-            elseif indep_model == "geosse" && num_regions == 3 # standard geosse with 3 regions 
+            elseif indep_model == 0 && num_regions == 3 # standard geosse with 3 regions 
                 if region_ind == 1
                     m_i_e = 0.2 
                 elseif region_ind == 2
@@ -364,9 +367,9 @@ function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,indep
             end
         end 
         ## Compute the overall rates
-        if model == "log"
+        if model == 0
             m_d_e = (log(n_i)+1)^(e_d)
-        elseif model == "standard"
+        elseif model == 1
             m_d_e = n_i^e_d
         end
         ans   = rho_e*m_i_e*m_d_e
@@ -394,18 +397,18 @@ function rate_d(base,num_species_per_region,home_ind,away_ind,home_scalar,away_s
         rho_d      = base # base rate 
         d_d_home   = home_scalar # rate scalar in home region
         d_d_away   = away_scalar # rate scalar in away region
-        if only_density == true 
+        if only_density == 1 
             m_i_d = 1 # means no density-independent factors 
-        elseif only_density == false
-            if indep_model == "time-varying"
+        elseif only_density == 0
+            if indep_model == 1
                     m_i_d = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 
-            elseif indep_model == "geosse" && num_regions == 2 # standard geosse with 2 regions
+            elseif indep_model == 0 && num_regions == 2 # standard geosse with 2 regions
                 if home_ind == 1 && away_ind == 2
                     m_i_d = 2.5
                 elseif home_ind == 2 && away_ind == 1
                     m_i_d = 0.5
                 end 
-            elseif indep_model == "geosse" && num_regions == 3 # standard geosse with 3 regions
+            elseif indep_model == 0 && num_regions == 3 # standard geosse with 3 regions
                 if home_ind == 1 && away_ind == 2
                     m_i_d = 2.5
                 elseif home_ind == 2 && away_ind == 1
@@ -422,9 +425,9 @@ function rate_d(base,num_species_per_region,home_ind,away_ind,home_scalar,away_s
             end
         end 
         ## Compute the overall rates
-        if model == "log"
+        if model == 0
             m_d_d  = (log(n_i)+1)^d_d_home * (log(n_j+1)+1)^d_d_away
-        elseif model == "standard"
+        elseif model == 1
             m_d_d  = (n_i^d_d_home)*(n_j+1)^d_d_away
         end
         ans   = rho_d*m_i_d*m_d_d
@@ -455,14 +458,14 @@ function rate_b(base,num_species_per_region,left_range,right_range,rate_scalar,o
         ## Define rate parameters 
         rho_b      = base # base rate 
         b_d        = rate_scalar # rate scalar 
-        if only_density == true 
+        if only_density == 1 
             m_i_b = 1 # means no density-independent factors 
-        elseif only_density == false
-            if indep_model == "time-varying"
+        elseif only_density == 0
+            if indep_model == 1
                 m_i_b = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 
-            elseif indep_model == "geosse" && num_regions == 2 # standard geosse with 2 regions
+            elseif indep_model == 0 && num_regions == 2 # standard geosse with 2 regions
                 m_i_b = 0.5
-            elseif indep_model == "geosse" && num_regions == 3 # standard geosse with 3 regions
+            elseif indep_model == 0 && num_regions == 3 # standard geosse with 3 regions
                 if (left_range == [1,0,0] && right_range == [0,1,0]) || (left_range == [0,1,0] && right_range == [1,0,0]) # A|B or B|A split
                     m_i_b = 0.5
                 elseif (left_range == [1,0,0] && right_range == [0,0,1]) || (left_range == [0,0,1] && right_range == [1,0,0]) # A|C or C|A split
@@ -482,10 +485,10 @@ function rate_b(base,num_species_per_region,left_range,right_range,rate_scalar,o
         f = 0 # initialize the range score for left_range|right_range split 
         for i in 1:length(idx_leftrange)
             for j in 1:length(idx_rightrange)
-                if model == "log"
+                if model == 0
                     m_b_d_ij = (log(num_species_per_region[idx_leftrange[i]]*num_species_per_region[idx_rightrange[j]])+1)^b_d
                     m_b_d_ji = (log(num_species_per_region[idx_rightrange[j]]*num_species_per_region[idx_leftrange[i]])+1)^b_d
-                elseif model == "standard"
+                elseif model == 1
                     m_b_d_ij = (num_species_per_region[idx_leftrange[i]]+num_species_per_region[idx_rightrange[j]]-1)^b_d
                     m_b_d_ji = (num_species_per_region[idx_rightrange[j]]+num_species_per_region[idx_leftrange[i]]-1)^b_d
                 end
@@ -591,7 +594,7 @@ function simulate(sim_num)
     
     
     rho_w = rand(Uniform(0.1,1));
-    rho_e = rand(Uniform(0.05,0.1));
+    rho_e = rand(Uniform(0.005,0.01));
     rho_d = rand(Uniform(0.1,1));
     rho_b = rand(Uniform(0.1,1));
 
@@ -614,11 +617,11 @@ function simulate(sim_num)
     # d_d_away = 0;
     # b_d      = 0;
 
-    w_d      = rand(Normal(-1,0.1));
-    e_d      = rand(Normal(1,0.1));
-    d_d_home = rand(Normal(-1,0.1));
-    d_d_away = rand(Normal(-1,0.1));
-    b_d      = rand(Normal(-1,0.1));
+    w_d      = rand(Normal(-1,0.4));
+    e_d      = rand(Normal(1,0.4));
+    d_d_home = rand(Normal(-1,0.4));
+    d_d_away = rand(Normal(-1,0.4));
+    b_d      = rand(Normal(-1,0.4));
 
 
     ### sim7 (lemma 3)
@@ -628,14 +631,15 @@ function simulate(sim_num)
     # d_d_away = -1;
     # b_d      = -1;
 
-    # model
-    # model        = "log";
-    model        = rand(["log","standard"]);
-    # only_density = false; # including other density-independent factors when computing rates 
-    # only_density = true; # including other density-independent factors when computing rates 
-    only_density = rand([true,false])
-    # indep_model  = "geosse";
-    indep_model  = "time-varying";
+    # model        = 0; # using log DD model
+    # model        = 1; # using standard dd model
+    model        = rand([0,1]);
+    # only_density = 0; # including other density-independent factors when computing rates 
+    only_density = 1; # exluding other density-independent factors when computing rates 
+    # only_density = rand([0,1]) # 0 = including density-indep factor, 1 = excluding density-indep factor
+
+    # indep_model  = 0; # time-constant density-independent rates (standard geosse)
+    indep_model  = 1 # time-varying density-independent rates
     
     
     ##########################
@@ -1072,17 +1076,27 @@ function simulate(sim_num)
     # Character data at tips 
     #########################
     tip_character_df = get_tip_data(history_df,num_regions)
-    if num_regions == 2
-        tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2])
-    elseif num_regions == 3
-        tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2, :region_3])
+    # if num_regions == 2
+    #     tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2])
+    # elseif num_regions == 3
+    #     tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2, :region_3])
+    # end
+
+    #########################
+    # Convert character data at tips (multiple binary characters -> single multi-state characters)
+    #########################
+    trans_tip_df     = DataFrame(taxa = [],state = [])
+    for i in 1:nrow(tip_character_df)
+        key_values = vec(Int.(reduce(vcat, eachcol(tip_character_df[i:i, 2:end]))))
+        state = [v for (k,v) in ranges_inv if k==key_values][1]
+        push!(trans_tip_df,(tip_character_df[i,1],state))
     end
     
     #########################
     # Rate labels and other summary statistics
     #########################
-    param_label_df =  DataFrame(base_w = rho_w,base_e = rho_e,base_d = rho_d,base_b = rho_b,scalar_w = w_d,
-                                scalar_e = e_d, scalar_d_i = d_d_home, scalar_d_j = d_d_away, scalar_b = b_d, num_alive_spec = num_alive_lineage, start_range = start_range,model = model,only_density = only_density,
+    param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),scalar_w = w_d,
+                                scalar_e = e_d, scalar_d_i = d_d_home, scalar_d_j = d_d_away, scalar_b = b_d, num_alive_spec = num_alive_lineage, start_range = start_range,model = model,indep_model = indep_model,only_density = only_density,
                                 run_time = max_time);
     
     #########################
@@ -1105,7 +1119,8 @@ function simulate(sim_num)
     end
     
     # # write tip data to file (as csv)
-    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),tip_character_df;header=true)
+    # CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),tip_character_df;header=true)
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),trans_tip_df;header=true)
     
     if num_regions == 2
        # # convert each summary statistics to data frame 
