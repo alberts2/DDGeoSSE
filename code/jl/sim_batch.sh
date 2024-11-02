@@ -6,7 +6,7 @@
 batches=10
 
 # Number of simulation replicates per batch
-batch_size=100
+batch_size=1000
 
 # Number of parallel processes (cores) per batch
 cores=10
