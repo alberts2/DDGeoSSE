@@ -5,7 +5,7 @@
   ####################
   library(ape)
   
-  drop_extinct_taxa = function(num_sim,batch_num){
+  drop_extinct_taxa = function(num_sim,batch_num,prefix){
     ###################
     # # SET FILE SYSTEM
     ####################
@@ -30,7 +30,7 @@
         complete_tree = read.tree(file = sim_file) # read the complete tree file
         #
         # extant_tips   = read.csv(file = paste0(dat_fp,"tip_data_tree_",i,".dat.csv"),header = FALSE)[,1] # read the list of extant taxa
-        extant_tips   = read.csv(file = paste0(dat_fp,"sim.",i,".dat.csv"),header = FALSE)[,1] # read the list of extant taxa
+        extant_tips   = read.csv(file = paste0(dat_fp,prefix,".",i,".extant.dat.csv"),header = FALSE)[,1] # read the list of extant taxa
         # for (j in 1:length(extant_tips)){
         #   extant_tips[j] = paste0("sp.",extant_tips[j]) # rename with sp.
         # }
