@@ -503,10 +503,10 @@ function rate_b(base,num_species_per_region,left_range,right_range,rate_scalar,o
 end
 
 #########################
-# Function to get character tip data from history_df
+# Function to get character extant tip data from history_df
 #########################
 
-function get_tip_data(history_df,num_regions)
+function get_extant_tip_data(history_df,num_regions)
     tip_range_df      = filter([:extinct_status, :split_status] => (l, v) -> ismissing(l) && ismissing(v), history_df) # get tip state information
     tip_character_dat = Matrix{Any}(undef, nrow(tip_range_df), num_regions+1) # empty matrix to store tip state and tip label 
     for i in 1:nrow(tip_range_df)
@@ -519,6 +519,29 @@ function get_tip_data(history_df,num_regions)
     ans = DataFrame(tip_character_dat,:auto) #convert to dataframe
     return(ans)
 end
+
+#########################
+# Function to get character of all tip data from history_df
+#########################
+
+function get_all_tip_data(history_df,num_regions)
+    tip_range_df = filter(row -> 
+    (ismissing(row.extinct_status) && ismissing(row.split_status)) ||
+    (row.extinct_status == 1 && row.split_status == 0), 
+    history_df)
+    #
+    tip_character_dat = Matrix{Any}(undef, nrow(tip_range_df), num_regions+1) # empty matrix to store tip state and tip label 
+    for i in 1:nrow(tip_range_df)
+        region_arr = deepcopy([k for (k,v) in ranges_inv if v==tip_range_df.final_state[i]][1]) # region presence/absence that correspond to range in range_inv
+        tip_character_dat[i,1] = tip_range_df.idx[i] # assign tip index 
+        for j in 1:num_regions
+            tip_character_dat[i,(j+1)] = region_arr[j] # assign region presence/absence
+        end
+    end
+    ans = DataFrame(tip_character_dat,:auto) #convert to dataframe
+    return(ans)
+end
+
 
 #########################
 # Write Newick string from history_df
@@ -598,10 +621,10 @@ function simulate(sim_num)
     # rho_d = rand(Uniform(0.1,1));
     # rho_b = rand(Uniform(0.1,1));
 
-    rho_w = rand(Uniform(1,2));
-    rho_e = rand(Uniform(0.01,0.02));
-    rho_d = rand(Uniform(0.01,0.02));
-    rho_b = rand(Uniform(1,2));
+    rho_w = rand(Uniform(1,5));
+    rho_e = rand(Uniform(0.01,0.05));
+    rho_d = rand(Uniform(0.01,0.05));
+    rho_b = rand(Uniform(1,5));
 
 
     ### sim_geosse (standard geosse)
@@ -629,12 +652,11 @@ function simulate(sim_num)
     # d_d_away = rand(Normal(-1,0.4));
     # b_d      = rand(Normal(-1,0.4));
 
-    w_d      = rand(Normal(-1,0.4));
-    e_d      = rand(Normal(2,0.4));
-    d_d_home = rand(Normal(-1,0.4));
-    d_d_away = rand(Normal(-1,0.4));
-    b_d      = rand(Normal(-1,0.4));
-
+    w_d      = rand(Normal(-2,0.1));
+    e_d      = rand(Normal(2,0.1));
+    d_d_home = rand(Normal(-2,0.1));
+    d_d_away = rand(Normal(-2,0.1));
+    b_d      = rand(Normal(-2,0.1));
 
     ### sim7 (lemma 3)
     # w_d      = -1;
@@ -643,15 +665,16 @@ function simulate(sim_num)
     # d_d_away = -1;
     # b_d      = -1;
 
-    # model        = 0; # using log DD model
+    model        = 0; # using log DD model
     # model        = 1; # using standard dd model
-    model        = rand([0,1]);
-    # only_density = 0; # including other density-independent factors when computing rates 
-    only_density = 1; # exluding other density-independent factors when computing rates 
+    # model        = rand([0,1]);
+    only_density = 0; # including other density-independent factors when computing rates 
+    # only_density = 1; # exluding other density-independent factors when computing rates 
     # only_density = rand([0,1]) # 0 = including density-indep factor, 1 = excluding density-indep factor
 
     # indep_model  = 0; # time-constant density-independent rates (standard geosse)
-    indep_model  = 1 # time-varying density-independent rates
+    # indep_model  = 1 # time-varying density-independent rates
+    indep_model = rand([0,1])
     
     
     ##########################
@@ -1085,23 +1108,33 @@ function simulate(sim_num)
     # println("length history_df = ",nrow(history_df))
 
     #########################
-    # Character data at tips 
+    # Character data for extant tips 
     #########################
-    tip_character_df = get_tip_data(history_df,num_regions)
-    # if num_regions == 2
-    #     tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2])
-    # elseif num_regions == 3
-    #     tip_character_df = rename!(tip_character_df, [:taxa, :region_1, :region_2, :region_3])
-    # end
+    extant_tip_character_df = get_extant_tip_data(history_df,num_regions)
 
     #########################
-    # Convert character data at tips (multiple binary characters -> single multi-state characters)
+    # Character data for all tips 
     #########################
-    trans_tip_df     = DataFrame(taxa = [],state = [])
-    for i in 1:nrow(tip_character_df)
-        key_values = vec(Int.(reduce(vcat, eachcol(tip_character_df[i:i, 2:end]))))
+    all_tip_character_df = get_all_tip_data(history_df,num_regions)
+
+    #########################
+    # Convert character data at extant tips (multiple binary characters -> single multi-state characters)
+    #########################
+    extant_trans_tip_df     = DataFrame(taxa = [],state = [])
+    for i in 1:nrow(extant_tip_character_df)
+        key_values = vec(Int.(reduce(vcat, eachcol(extant_tip_character_df[i:i, 2:end]))))
         state = [v for (k,v) in ranges_inv if k==key_values][1]
-        push!(trans_tip_df,(tip_character_df[i,1],state))
+        push!(extant_trans_tip_df,(extant_tip_character_df[i,1],state))
+    end
+
+    #########################
+    # Convert character data at all tips (multiple binary characters -> single multi-state characters)
+    #########################
+    all_trans_tip_df     = DataFrame(taxa = [],state = [])
+    for i in 1:nrow(all_tip_character_df)
+        key_values = vec(Int.(reduce(vcat, eachcol(all_tip_character_df[i:i, 2:end]))))
+        state = [v for (k,v) in ranges_inv if k==key_values][1]
+        push!(all_trans_tip_df,(all_tip_character_df[i,1],state))
     end
     
     #########################
@@ -1131,9 +1164,10 @@ function simulate(sim_num)
     end
     
     # # write tip data to file (as csv)
-    # CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),tip_character_df;header=true)
-    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),trans_tip_df;header=true)
-    
+    # CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),extant_tip_character_df;header=true)
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".extant"*".dat.csv"),extant_trans_tip_df;header=true)
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),all_trans_tip_df;header=true)
+
     if num_regions == 2
        # # convert each summary statistics to data frame 
         dat_reg_cts   = DataFrame(time = [x[1] for x in species_cts_time_region],region_1 = [x[2] for x in species_cts_time_region],
