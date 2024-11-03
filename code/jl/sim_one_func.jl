@@ -323,7 +323,12 @@ function rate_w(base,region_ind,species_count_ind,rate_scalar,only_density,indep
         elseif model == 1
             m_d_w = n_i^w_d
         end
-        ans   = rho_w*m_i_w*m_d_w
+        #
+        if only_density == 1 || (only_density == 0 && indep_model == 1)
+            ans   = rho_w*m_i_w*m_d_w
+        elseif only_density == 0 && indep_model == 0
+            ans   = rho_w*m_i_w
+        end
     end
     return(ans)
 end
@@ -372,7 +377,12 @@ function rate_e(base,region_ind,species_count_ind,rate_scalar,only_density,indep
         elseif model == 1
             m_d_e = n_i^e_d
         end
-        ans   = rho_e*m_i_e*m_d_e
+        #
+        if only_density == 1 || (only_density == 0 && indep_model == 1)
+            ans   = rho_e*m_i_e*m_d_e
+        elseif only_density == 0 && indep_model == 0
+            ans   = rho_e*m_i_e
+        end
     end
     return(ans)
 end
@@ -404,7 +414,7 @@ function rate_d(base,num_species_per_region,home_ind,away_ind,home_scalar,away_s
                     m_i_d = rand(myLogNormal(1,1)) # draw density-independent rate from lognormal with mean 1, std 1 
             elseif indep_model == 0 && num_regions == 2 # standard geosse with 2 regions
                 if home_ind == 1 && away_ind == 2
-                    m_i_d = 2.5
+                    m_i_d = 1.0
                 elseif home_ind == 2 && away_ind == 1
                     m_i_d = 0.5
                 end 
@@ -430,7 +440,12 @@ function rate_d(base,num_species_per_region,home_ind,away_ind,home_scalar,away_s
         elseif model == 1
             m_d_d  = (n_i^d_d_home)*(n_j+1)^d_d_away
         end
-        ans   = rho_d*m_i_d*m_d_d
+        #
+        if only_density == 1 || (only_density == 0 && indep_model == 1)
+            ans   = rho_d*m_i_d*m_d_d
+        elseif only_density == 0 && indep_model == 0
+            ans   = rho_d*m_i_d
+        end
     end
     return(ans)
 end
@@ -497,7 +512,11 @@ function rate_b(base,num_species_per_region,left_range,right_range,rate_scalar,o
         end
         f = 1/f
         ## Compute the overall rates
-        ans   = rho_b*m_i_b*f
+        if only_density == 1 || (only_density == 0 && indep_model == 1)
+            ans   = rho_b*m_i_b*f
+        elseif only_density == 0 && indep_model == 0
+            ans = rho_b*m_i_b
+        end
     end
     return(ans)
 end
@@ -1140,9 +1159,15 @@ function simulate(sim_num)
     #########################
     # Rate labels and other summary statistics
     #########################
-    param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),scalar_w = w_d,
-                                scalar_e = e_d, scalar_d_i = d_d_home, scalar_d_j = d_d_away, scalar_b = b_d, num_alive_spec = num_alive_lineage, start_range = start_range,model = model,indep_model = indep_model,only_density = only_density,
+    if indep_model == 0 # if simulated under standard constant geosse model
+        param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(0),
+                                    exp_scalar_e = exp(0), exp_scalar_d_i = exp(0), exp_scalar_d_j = exp(0), exp_scalar_b = exp(0), num_alive_spec = num_alive_lineage, start_range = start_range,model = model,indep_model = indep_model,only_density = only_density,
+                                    run_time = max_time);
+    else
+        param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(w_d),
+                                exp_scalar_e = exp(e_d), exp_scalar_d_i = exp(d_d_home), exp_scalar_d_j = exp(d_d_away), exp_scalar_b = exp(b_d), num_alive_spec = num_alive_lineage, start_range = start_range,model = model,indep_model = indep_model,only_density = only_density,
                                 run_time = max_time);
+    end
     
     #########################
     # Write Newick string 
