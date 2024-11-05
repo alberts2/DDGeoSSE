@@ -1027,14 +1027,14 @@ function simulate(sim_num)
     #################################
     
         ### Non tree extinction case
-        if stop_condition == "time" && curr_time >= max_time && any(x -> x != 0, num_species_per_range)  # if condition on max_time and we don't have tree extinction
+        if stop_condition == "time" && curr_time >= max_time && num_alive_lineage > 0  # if condition on max_time and we don't have tree extinction
             do_simulation = false
-        elseif stop_condition == "numtaxa" && num_alive_lineage >= max_taxa && any(x -> x != 0, num_species_per_range)  # if condition on max_taxa and we don't have tree extinction
+        elseif stop_condition == "numtaxa" && num_alive_lineage >= max_taxa && num_alive_lineage > 0  # if condition on max_taxa and we don't have tree extinction
             do_simulation = false
         ### Tree extinction case
-        elseif all(x -> x == 0, num_species_per_range) && resimulate == false # we have tree extinction and resimulate == false
+        elseif num_alive_lineage == 0 && resimulate == false # we have tree extinction and resimulate == false
             do_simulation = false 
-        elseif all(x -> x == 0, num_species_per_range) && resimulate == true # we have tree extinction and  resimulate == true 
+        elseif num_alive_lineage == 0 && resimulate == true # we have tree extinction and  resimulate == true 
             do_simulation = true
         end
 
@@ -1043,7 +1043,7 @@ function simulate(sim_num)
     #################################
     
         # stop simulation if condition met 
-        if do_simulation == false && any(x -> x != 0, num_species_per_range) && stop_condition == "time" # if we don't have tree extinction and condition = "time"
+        if do_simulation == false && num_alive_lineage > 0 && stop_condition == "time" # if we don't have tree extinction and condition = "time"
             # # extend the branch length of all currently living lineages to the max_time 
             which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
             # println(history_df)
@@ -1062,11 +1062,11 @@ function simulate(sim_num)
             for i in 1:length(missing_rows)
                 species_cts_time_range[missing_rows[i]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
             end
-        elseif do_simulation == false && any(x -> x != 0, num_species_per_range) && stop_condition == "numtaxa" # if we don't have tree extinction and condition = "numtaxa"
+        elseif do_simulation == false && num_alive_lineage > 0 && stop_condition == "numtaxa" # if we don't have tree extinction and condition = "numtaxa"
             break
-        elseif do_simulation == false && all(x -> x == 0, num_species_per_range) # if we have tree extinction and resimulate == false
+        elseif do_simulation == false && num_alive_lineage == 0 # if we have tree extinction and resimulate == false
             println("tree extinction")
-        elseif do_simulation == true && all(x -> x == 0, num_species_per_range)  # if we have tree extinction and resimulate == true
+        elseif do_simulation == true && num_alive_lineage == 0  # if we have tree extinction and resimulate == true
             println("tree extinction, " * "resimulate tree " * string(sim_num))
             # restart everything
             num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
@@ -1131,30 +1131,42 @@ function simulate(sim_num)
     #########################
     extant_tip_character_df = get_extant_tip_data(history_df,num_regions)
 
+
     #########################
     # Character data for all tips 
     #########################
     all_tip_character_df = get_all_tip_data(history_df,num_regions)
 
     #########################
-    # Convert character data at extant tips (multiple binary characters -> single multi-state characters)
+    # Add header names for character matrix
     #########################
-    extant_trans_tip_df     = DataFrame(taxa = [],state = [])
-    for i in 1:nrow(extant_tip_character_df)
-        key_values = vec(Int.(reduce(vcat, eachcol(extant_tip_character_df[i:i, 2:end]))))
-        state = [v for (k,v) in ranges_inv if k==key_values][1]
-        push!(extant_trans_tip_df,(extant_tip_character_df[i,1],state))
-    end
+    if num_regions == 2
+        extant_tip_character_df = rename!(extant_tip_character_df, [:taxa, :region_1, :region_2])
+        all_tip_character_df    = rename!(all_tip_character_df, [:taxa, :region_1, :region_2])
+    elseif num_regions == 3
+        extant_tip_character_df = rename!(extant_tip_character_df, [:taxa, :region_1, :region_2, :region_3])
+        all_tip_character_df    = rename!(all_tip_character_df, [:taxa, :region_1, :region_2, :region_3])
+    end 
 
-    #########################
-    # Convert character data at all tips (multiple binary characters -> single multi-state characters)
-    #########################
-    all_trans_tip_df     = DataFrame(taxa = [],state = [])
-    for i in 1:nrow(all_tip_character_df)
-        key_values = vec(Int.(reduce(vcat, eachcol(all_tip_character_df[i:i, 2:end]))))
-        state = [v for (k,v) in ranges_inv if k==key_values][1]
-        push!(all_trans_tip_df,(all_tip_character_df[i,1],state))
-    end
+    # #########################
+    # # Convert character data at extant tips (multiple binary characters -> single multi-state characters)
+    # #########################
+    # extant_trans_tip_df     = DataFrame(taxa = [],state = [])
+    # for i in 1:nrow(extant_tip_character_df)
+    #     key_values = vec(Int.(reduce(vcat, eachcol(extant_tip_character_df[i:i, 2:end]))))
+    #     state = [v for (k,v) in ranges_inv if k==key_values][1]
+    #     push!(extant_trans_tip_df,(extant_tip_character_df[i,1],state))
+    # end
+
+    # #########################
+    # # Convert character data at all tips (multiple binary characters -> single multi-state characters)
+    # #########################
+    # all_trans_tip_df     = DataFrame(taxa = [],state = [])
+    # for i in 1:nrow(all_tip_character_df)
+    #     key_values = vec(Int.(reduce(vcat, eachcol(all_tip_character_df[i:i, 2:end]))))
+    #     state = [v for (k,v) in ranges_inv if k==key_values][1]
+    #     push!(all_trans_tip_df,(all_tip_character_df[i,1],state))
+    # end
     
     #########################
     # Rate labels and other summary statistics
@@ -1190,8 +1202,8 @@ function simulate(sim_num)
     
     # # write tip data to file (as csv)
     # CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),extant_tip_character_df;header=true)
-    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".extant"*".dat.csv"),extant_trans_tip_df;header=true)
-    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),all_trans_tip_df;header=true)
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".extant"*".dat.csv"),extant_tip_character_df;header=true)
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),all_tip_character_df;header=true)
 
     if num_regions == 2
        # # convert each summary statistics to data frame 
