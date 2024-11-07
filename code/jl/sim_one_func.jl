@@ -38,13 +38,13 @@ out_dir  = out_path
 ################
 min_taxa       = 5; # Minimum number of extant taxa to simulate 
 max_taxa       = 10; # Maximum number of extant taxa to simulate
-# max_time       = 7; # Maximum simulation time 
-# max_time       = 300; # Maximum simulation time 
-max_time       = 50; # Maximum simulation time 
+max_time       = 30; # Maximum simulation time 
+# Perform rejection sampling if num_extant_taxa by max_time exceeds tree_width condition on max_time
+tree_width     = 3; # Maximum number of extant taxa to have by the end of max_time (for stop_condition = "time")
+#
 stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 global resimulate = true # whether to resimulate in case of tree extinction or not
-# global timebin    = "10" # time bin for tracking number of species across region/range in continuous time 
 global timebin    = "100" # time bin for tracking number of species across region/range in continuous time 
 
 #############
@@ -686,14 +686,11 @@ function simulate(sim_num)
 
     model        = 0; # using log DD model
     # model        = 1; # using standard dd model
-    # model        = rand([0,1]);
-    only_density = 0; # including other density-independent factors when computing rates 
-    # only_density = 1; # exluding other density-independent factors when computing rates 
-    # only_density = rand([0,1]) # 0 = including density-indep factor, 1 = excluding density-indep factor
+    # only_density = 0; # including other density-independent factors when computing rates 
+    only_density = 1; # exluding other density-independent factors when computing rates 
 
     # indep_model  = 0; # time-constant density-independent rates (standard geosse)
-    # indep_model  = 1 # time-varying density-independent rates
-    indep_model = rand([0,1])
+    indep_model  = 1 # time-varying density-independent rates
     
     
     ##########################
@@ -1027,15 +1024,42 @@ function simulate(sim_num)
     #################################
     
         ### Non tree extinction case
-        if stop_condition == "time" && curr_time >= max_time && num_alive_lineage > 0  # if condition on max_time and we don't have tree extinction
+        if stop_condition == "time" && curr_time >= max_time && num_alive_lineage > 0 && num_alive_lineage <=tree_width # if condition on max_time and we don't have tree extinction and num_alive_lineage does not exceed tree_width by time T
             do_simulation = false
         elseif stop_condition == "numtaxa" && num_alive_lineage >= max_taxa && num_alive_lineage > 0  # if condition on max_taxa and we don't have tree extinction
             do_simulation = false
         ### Tree extinction case
-        elseif num_alive_lineage == 0 && resimulate == false # we have tree extinction and resimulate == false
+        elseif num_alive_lineage == 0 && resimulate == false  # we have tree extinction and resimulate == false
             do_simulation = false 
         elseif num_alive_lineage == 0 && resimulate == true # we have tree extinction and  resimulate == true 
             do_simulation = true
+            # redraw the parameters
+            rho_w = rand(Uniform(1,5));
+            rho_e = rand(Uniform(0.01,0.05));
+            rho_d = rand(Uniform(0.01,0.05));
+            rho_b = rand(Uniform(1,5));
+            # redraw the parameters
+            w_d      = rand(Normal(-2,0.1));
+            e_d      = rand(Normal(2,0.1));
+            d_d_home = rand(Normal(-2,0.1));
+            d_d_away = rand(Normal(-2,0.1));
+            b_d      = rand(Normal(-2,0.1));
+        #### num_alive lineage exceeds tree_width by max_time when conditioned on max_time
+        elseif stop_condition == "time" && num_alive_lineage > tree_width && curr_time >= max_time && resimulate == false
+            do_simulation = false 
+        elseif stop_condition == "time" && num_alive_lineage > tree_width && curr_time >= max_time && resimulate == true
+            do_simulation = true
+            # redraw the parameters
+            rho_w = rand(Uniform(1,5));
+            rho_e = rand(Uniform(0.01,0.05));
+            rho_d = rand(Uniform(0.01,0.05));
+            rho_b = rand(Uniform(1,5));
+            # redraw the parameters
+            w_d      = rand(Normal(-2,0.1));
+            e_d      = rand(Normal(2,0.1));
+            d_d_home = rand(Normal(-2,0.1));
+            d_d_away = rand(Normal(-2,0.1));
+            b_d      = rand(Normal(-2,0.1));
         end
 
     #################################
@@ -1043,7 +1067,7 @@ function simulate(sim_num)
     #################################
     
         # stop simulation if condition met 
-        if do_simulation == false && num_alive_lineage > 0 && stop_condition == "time" # if we don't have tree extinction and condition = "time"
+        if do_simulation == false && num_alive_lineage > 0 && num_alive_lineage <= tree_width && stop_condition == "time" # if we don't have tree extinction or does not exceed tree_width when condition = "time"
             # # extend the branch length of all currently living lineages to the max_time 
             which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
             # println(history_df)
@@ -1066,8 +1090,14 @@ function simulate(sim_num)
             break
         elseif do_simulation == false && num_alive_lineage == 0 # if we have tree extinction and resimulate == false
             println("tree extinction")
-        elseif do_simulation == true && num_alive_lineage == 0  # if we have tree extinction and resimulate == true
-            println("tree extinction, " * "resimulate tree " * string(sim_num))
+        elseif (do_simulation == false && stop_condition == "time" && curr_time >= max_time && num_alive_lineage > tree_width) 
+            println("Tree has more extant taxa than tree_width")
+        elseif (do_simulation == true && num_alive_lineage == 0) || (do_simulation == true && stop_condition == "time" && curr_time >= max_time && num_alive_lineage > tree_width) # if we have tree extinction and resimulate == true or if num_alive_lineage > max_taxa by max_time
+            if (num_alive_lineage == 0)
+                println("tree extinction, " * "resimulate tree " * string(sim_num))
+            elseif (num_alive_lineage != 0 && num_alive_lineage > max_taxa)
+                println("number of extant taxa exceeds tree_width, " * "resimulate tree " * string(sim_num))
+            end
             # restart everything
             num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
             num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
@@ -1234,7 +1264,6 @@ function simulate(sim_num)
                                 range_4 = [x[5] for x in range_count_history],range_5 = [x[6] for x in range_count_history],
                                 range_6 = [x[7] for x in range_count_history],range_7 = [x[8] for x in range_count_history])   
     end
-    
     # # write summary statistics and rates to file
     CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".labels.csv"),param_label_df) # write rate parameters and number of alive tips
     CSV.write(joinpath(out_dir,"anagenetic_changes_tree_"*string(sim_num)*".csv"),anagen_df) # write anagenetic history along branches over event times 
