@@ -39,9 +39,6 @@ out_dir  = out_path
 min_taxa       = 5; # Minimum number of extant taxa to simulate 
 max_taxa       = 10; # Maximum number of extant taxa to simulate
 max_time       = 30; # Maximum simulation time 
-# Perform rejection sampling if num_extant_taxa by max_time exceeds tree_width condition on max_time
-tree_width     = 3; # Maximum number of extant taxa to have by the end of max_time (for stop_condition = "time")
-#
 stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 global resimulate = true # whether to resimulate in case of tree extinction or not
@@ -634,16 +631,11 @@ function simulate(sim_num)
     # start_range                        = 1;
     num_alive_lineage                  = 1; # Start with one species (stem branch)
     
-    
-    # rho_w = rand(Uniform(0.1,1));
-    # rho_e = rand(Uniform(0.005,0.01));
-    # rho_d = rand(Uniform(0.1,1));
-    # rho_b = rand(Uniform(0.1,1));
 
-    rho_w = rand(Uniform(1,5));
-    rho_e = rand(Uniform(0.01,0.05));
+    rho_w = rand(Uniform(0.5,1));
+    rho_e = rand(Uniform(0.01,0.03));
     rho_d = rand(Uniform(0.01,0.05));
-    rho_b = rand(Uniform(1,5));
+    rho_b = rand(Uniform(0.5,1));
 
 
     ### sim_geosse (standard geosse)
@@ -671,11 +663,11 @@ function simulate(sim_num)
     # d_d_away = rand(Normal(-1,0.4));
     # b_d      = rand(Normal(-1,0.4));
 
-    w_d      = rand(Normal(-2,0.1));
-    e_d      = rand(Normal(2,0.1));
-    d_d_home = rand(Normal(-2,0.1));
-    d_d_away = rand(Normal(-2,0.1));
-    b_d      = rand(Normal(-2,0.1));
+    w_d      = rand(Uniform(-2,-1));
+    e_d      = rand(Uniform(1,2));
+    d_d_home = rand(Uniform(-2,-1));
+    d_d_away = rand(Uniform(-2,-1));
+    b_d      = rand(Uniform(-2,-1));
 
     ### sim7 (lemma 3)
     # w_d      = -1;
@@ -1024,42 +1016,15 @@ function simulate(sim_num)
     #################################
     
         ### Non tree extinction case
-        if stop_condition == "time" && curr_time >= max_time && num_alive_lineage > 0 && num_alive_lineage <=tree_width # if condition on max_time and we don't have tree extinction and num_alive_lineage does not exceed tree_width by time T
+        if stop_condition == "time" && curr_time >= max_time && num_alive_lineage > 0  # if condition on max_time and we don't have tree extinction
             do_simulation = false
         elseif stop_condition == "numtaxa" && num_alive_lineage >= max_taxa && num_alive_lineage > 0  # if condition on max_taxa and we don't have tree extinction
             do_simulation = false
         ### Tree extinction case
         elseif num_alive_lineage == 0 && resimulate == false  # we have tree extinction and resimulate == false
             do_simulation = false 
-        elseif num_alive_lineage == 0 && resimulate == true # we have tree extinction and  resimulate == true 
+        elseif num_alive_lineage == 0 && resimulate == true # we have tree extinction and resimulate == true 
             do_simulation = true
-            # redraw the parameters
-            rho_w = rand(Uniform(1,5));
-            rho_e = rand(Uniform(0.01,0.05));
-            rho_d = rand(Uniform(0.01,0.05));
-            rho_b = rand(Uniform(1,5));
-            # redraw the parameters
-            w_d      = rand(Normal(-2,0.1));
-            e_d      = rand(Normal(2,0.1));
-            d_d_home = rand(Normal(-2,0.1));
-            d_d_away = rand(Normal(-2,0.1));
-            b_d      = rand(Normal(-2,0.1));
-        #### num_alive lineage exceeds tree_width by max_time when conditioned on max_time
-        elseif stop_condition == "time" && num_alive_lineage > tree_width && curr_time >= max_time && resimulate == false
-            do_simulation = false 
-        elseif stop_condition == "time" && num_alive_lineage > tree_width && curr_time >= max_time && resimulate == true
-            do_simulation = true
-            # redraw the parameters
-            rho_w = rand(Uniform(1,5));
-            rho_e = rand(Uniform(0.01,0.05));
-            rho_d = rand(Uniform(0.01,0.05));
-            rho_b = rand(Uniform(1,5));
-            # redraw the parameters
-            w_d      = rand(Normal(-2,0.1));
-            e_d      = rand(Normal(2,0.1));
-            d_d_home = rand(Normal(-2,0.1));
-            d_d_away = rand(Normal(-2,0.1));
-            b_d      = rand(Normal(-2,0.1));
         end
 
     #################################
@@ -1067,7 +1032,7 @@ function simulate(sim_num)
     #################################
     
         # stop simulation if condition met 
-        if do_simulation == false && num_alive_lineage > 0 && num_alive_lineage <= tree_width && stop_condition == "time" # if we don't have tree extinction or does not exceed tree_width when condition = "time"
+        if do_simulation == false && num_alive_lineage > 0 && stop_condition == "time" # if we don't have tree extinction and condition = "time"
             # # extend the branch length of all currently living lineages to the max_time 
             which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
             # println(history_df)
@@ -1090,14 +1055,8 @@ function simulate(sim_num)
             break
         elseif do_simulation == false && num_alive_lineage == 0 # if we have tree extinction and resimulate == false
             println("tree extinction")
-        elseif (do_simulation == false && stop_condition == "time" && curr_time >= max_time && num_alive_lineage > tree_width) 
-            println("Tree has more extant taxa than tree_width")
-        elseif (do_simulation == true && num_alive_lineage == 0) || (do_simulation == true && stop_condition == "time" && curr_time >= max_time && num_alive_lineage > tree_width) # if we have tree extinction and resimulate == true or if num_alive_lineage > max_taxa by max_time
-            if (num_alive_lineage == 0)
-                println("tree extinction, " * "resimulate tree " * string(sim_num))
-            elseif (num_alive_lineage != 0 && num_alive_lineage > max_taxa)
-                println("number of extant taxa exceeds tree_width, " * "resimulate tree " * string(sim_num))
-            end
+        elseif do_simulation == true && num_alive_lineage == 0  # if we have tree extinction and resimulate == true
+            println("tree extinction, " * "resimulate tree " * string(sim_num))
             # restart everything
             num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
             num_species_per_region = fill(0, num_regions); # Empty vector to store number of species in each region
