@@ -8,10 +8,10 @@ library(ape)
 #######################
 fp       = "/Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/"
 in_fp    = paste0(fp,"data/sim_geosse/diversitree/") 
-in_jl_fp = paste0(fp,"data/sim_geosse/julia/")
-# in_jl_fp = paste0(fp,"data/sim_geosse/julia_false/")
-out_fp   = paste0(fp,"plot/sim_geosse/")
-# out_fp   = paste0(fp,"plot/sim_geosse_false/")
+# in_jl_fp = paste0(fp,"data/sim_geosse/julia/")
+in_jl_fp = paste0(fp,"data/sim_geosse/julia_false/")
+# out_fp   = paste0(fp,"plot/sim_geosse/")
+out_fp   = paste0(fp,"plot/sim_geosse_false/")
 
 ##### INPUT #####
 #################
@@ -182,31 +182,31 @@ plot_rho = ggplot(rho_dat, aes(x=rho_type, y=value, fill=rho_type)) +
 ##### SAVE BALANCE OUTPUT ###
 #####################
 
-pdf(file = paste0(out_fp,"comparison_geosse.pdf"), height = 6, width = 8)
-
-print(plot_colless_corr)
-print(plot_colless)
-print(plot_colless_quad)
-print(plot_sackin)
-print(plot_beta)
-print(plot_stairs)
-print(plot_stairs2)
-print(plot_blum)
-print(plot_rogers)
-print(plot_pitchforks)
-
-dev.off()
+# pdf(file = paste0(out_fp,"comparison_geosse.pdf"), height = 6, width = 8)
+# 
+# print(plot_colless_corr)
+# print(plot_colless)
+# print(plot_colless_quad)
+# print(plot_sackin)
+# print(plot_beta)
+# print(plot_stairs)
+# print(plot_stairs2)
+# print(plot_blum)
+# print(plot_rogers)
+# print(plot_pitchforks)
+# 
+# dev.off()
 
 ##### SAVE BRANCH LENGTH OUTPUT ###
 #####################
 
-pdf(file = paste0(out_fp,"comparison_branch_geosse.pdf"), height = 6, width = 8)
-
-print(plot_crown)
-print(plot_gamma)
-print(plot_rho)
-
-dev.off()
+# pdf(file = paste0(out_fp,"comparison_branch_geosse.pdf"), height = 6, width = 8)
+# 
+# print(plot_crown)
+# print(plot_gamma)
+# print(plot_rho)
+# 
+# dev.off()
 
 ##### T-test for sample means ###
 #################################
@@ -220,3 +220,7 @@ p_value_vec = c(t.test(diversitree_dat$colless,balance_jl_df$colless)$p.value,
                 t.test(diversitree_dat$blum_norm,balance_jl_df$blum_norm)$p.value,
                 t.test(diversitree_dat$rogers_norm,balance_jl_df$rogers_norm)$p.value,
                 t.test(diversitree_dat$pitchforks_norm,balance_jl_df$pitchforks_norm)$p.value)
+
+p_value_branch_vec = c(t.test(diversitree_length_dat$crown_age,length_jl_df$crown_age)$p.value,
+                       t.test(diversitree_length_dat$gamma,length_jl_df$gamma)$p.value,
+                       t.test(diversitree_length_dat$pigot_rho,length_jl_df$pigot_rho)$p.value)
