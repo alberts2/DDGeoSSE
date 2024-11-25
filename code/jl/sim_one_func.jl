@@ -736,8 +736,8 @@ function simulate(sim_num)
     # final_state = range state on the branch just before an event on that branch, extinct_status = whether its already extinct (1) or not (0) and "missing" if no event on the branch yet
     # split_state = whether it corresponds to a splitting event (1) or not (0) and "missing" if no event occuring on the branch yet,
     # branch_length = length of branch label idx (time_end - time_start), child_1_idx = idx of 1st child (missing if no speciation), child_2_idx = idx of 2nd child (missing if no speciation)
-    history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = []) 
-    push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
+    history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = [],parent_idx = []) 
+    push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing,-1)) # add first event at the root node (root node)
 
     
     ###############################################
@@ -890,8 +890,8 @@ function simulate(sim_num)
     
             if next_event[1][1] == "w" # if the next event is within-region speciation (Sep 5: already checked)
                 max_idx = maximum(history_df.idx) # find the maximum idx from current recorded branch labels in history_df
-                push!(history_df,(max_idx+1,curr_time,missing,next_state[1],missing,missing,missing,missing,missing,missing)) # child 1 inherits the parent's range
-                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing,missing)) # child 2 inherits the other range in case parent is widespread
+                push!(history_df,(max_idx+1,curr_time,missing,next_state[1],missing,missing,missing,missing,missing,missing,history_df[[row_chosen],:idx][1])) # child 1 inherits the parent's range
+                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing,missing,history_df[[row_chosen],:idx][1])) # child 2 inherits the other range in case parent is widespread
                 # update the parent branch's status
                 # P.S. row_chosen must be transformed into a vector instead of scalar
                 history_df[[row_chosen],:time_end]       .= curr_time
@@ -940,8 +940,8 @@ function simulate(sim_num)
             elseif next_event[1][1] == "b" # if the next event is between-region speciation (Sep 6: already checked)
                 # println("history before = ",history_df)
                 max_idx = maximum(history_df.idx) # find the maximum idx from current recoded branch labels in history_df
-                push!(history_df,(max_idx+1,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing,missing)) # left range for child 1
-                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][3],missing,missing,missing,missing,missing,missing)) # right range for child 2
+                push!(history_df,(max_idx+1,curr_time,missing,next_event[1][2],missing,missing,missing,missing,missing,missing,history_df[[row_chosen],:idx][1])) # left range for child 1
+                push!(history_df,(max_idx+2,curr_time,missing,next_event[1][3],missing,missing,missing,missing,missing,missing,history_df[[row_chosen],:idx][1])) # right range for child 2
                 # update the parent branch's status
                 # P.S. row_chosen must be transformed into a vector instead of scalar (by doing [row_chosen])
                 history_df[[row_chosen],:time_end]       .= curr_time
@@ -1116,8 +1116,8 @@ function simulate(sim_num)
             species_cts_time_range[1][2:(num_ranges+1)]=deepcopy(num_species_per_range)        
             #
             curr_time = start_time; # Initialize current time of simulation p.s. time starts from 0 (past)
-            history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = []) 
-            push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing)) # add first event at the root node (root node)
+            history_df = DataFrame(idx = [],time_start = [],time_end = [],final_state = [],extinct_status = [],split_status = [],branch_length = [],child_1_idx = [],child_2_idx = [],event_type = [],parent_idx = []) 
+            push!(history_df,(1,start_time,missing,start_range,missing,missing,missing,missing,missing,missing,-1)) # add first event at the root node (root node)
             anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
         end
     end
