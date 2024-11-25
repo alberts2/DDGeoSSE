@@ -1052,7 +1052,23 @@ function simulate(sim_num)
                 species_cts_time_range[missing_rows[i]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
             end
         elseif do_simulation == false && num_alive_lineage > 0 && stop_condition == "numtaxa" # if we don't have tree extinction and condition = "numtaxa"
-            break
+            # # extend the branch length of all currently living lineages to the curr_time 
+            which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
+            added_time = curr_time + 0.001
+            for i in 1:length(which_lineages)
+                history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
+                history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+            end
+            # Fill the remaining rows with missing value of species_cts_time_region with num_spec_per_region from previous entry (since we just extend branch lengths here)
+            missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_region])
+            for i in 1:length(missing_rows)
+                species_cts_time_region[missing_rows[i]][2:(num_regions+1)] = deepcopy(num_species_per_region)
+            end
+            # Fill the remaining rows with missing value of  species_cts_time_range with num_spec_per_range from previous entry (since we just extend branch lengths here)
+            missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_range])
+            for i in 1:length(missing_rows)
+                species_cts_time_range[missing_rows[i]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
+            end
         elseif do_simulation == false && num_alive_lineage == 0 # if we have tree extinction and resimulate == false
             println("tree extinction")
         elseif do_simulation == true && num_alive_lineage == 0  # if we have tree extinction and resimulate == true
