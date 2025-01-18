@@ -1168,7 +1168,7 @@ function simulate(sim_num)
     
     # # write tip data to file (as csv)
     # CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),extant_tip_character_df;header=true)
-    #CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".extant"*".dat.csv"),extant_tip_character_df;header=true)
+    CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".extant"*".dat.csv"),extant_tip_character_df;header=true)
     #CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),all_tip_character_df;header=true)
 
     if num_regions == 2
