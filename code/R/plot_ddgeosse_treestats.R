@@ -8,13 +8,18 @@ library(grid)
 ###################
 # # SET FILE SYSTEM
 ###################
+# filename = "smaller_interval/mesh_tree_stats_50_small.csv"
+filename = "larger_interval/mesh_tree_stats_50_big.csv"
+
 fp              = "/Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/"
+in_fp           = paste0(fp,"data/tree_stats/",filename)
 out_fp          = paste0(fp,"plot/sim_treestats/")
 
 ###################
 # # READ FILE
 ###################
-mesh_dat = read.table(paste0(fp,"data/tree_stats/mesh_tree_stats_50.csv"),sep = ",",header = T) #based on extant-only trees
+
+mesh_dat = read.table(in_fp,sep = ",",header = T) #based on extant-only trees
 mesh_dat$log_mean_extant_taxa <- log(mesh_dat$mean_extant_taxa)
 
 # Only dd-extinction
@@ -46,25 +51,25 @@ withindisperse_dat = withindisperse_dat[order(withindisperse_dat$w_d,decreasing 
 ###################
 p1_beta = ggplot(mesh_dat, aes(x=w_d ,y=e_d,fill=beta))
 p1_beta = p1_beta + geom_tile() + 
-          labs(title = expression("Effect of"~w[d]~"and"~e[d]~"on"~beta), x = expression(w[d]), y = expression(e[d])) +
+          labs(title = expression("Effect of"~w^D~"and"~e^D~"on"~beta), x = expression(w^D), y = expression(e^D)) +
           scale_fill_viridis_c() +
           theme_minimal()
 
 p1_gamma = ggplot(mesh_dat, aes(x=w_d ,y=e_d,fill=gamma))
 p1_gamma = p1_gamma + geom_tile() + 
-           labs(title = expression("Effect of"~w[d]~"and"~e[d]~"on"~gamma), x = expression(w[d]), y = expression(e[d])) +
+           labs(title = expression("Effect of"~w^D~"and"~e^D~"on"~gamma), x = expression(w^D), y = expression(e^D)) +
            scale_fill_viridis_c() +
            theme_minimal()
 
 p1_size  = ggplot(mesh_dat, aes(x=w_d ,y=e_d,fill=mean_range_size))
 p1_size  = p1_size  + geom_tile() + 
-           labs(title = expression("Effect of"~w[d]~"and"~e[d]~"on mean range size"), x = expression(w[d]), y = expression(e[d])) +
+           labs(title = expression("Effect of"~w^D~"and"~e^D~"on mean range size"), x = expression(w^D), y = expression(e^D)) +
            scale_fill_viridis_c() +
            theme_minimal()
 
 p1_taxa  = ggplot(mesh_dat, aes(x=w_d ,y=e_d,fill=log_mean_extant_taxa))
 p1_taxa  = p1_taxa  + geom_tile() + 
-           labs(title = expression("Effect of"~w[d]~"and"~e[d]~"on log mean extant taxa"), x = expression(w[d]), y = expression(e[d])) +
+           labs(title = expression("Effect of"~w^D~"and"~e^D~"on log mean extant taxa"), x = expression(w^D), y = expression(e^D)) +
            scale_fill_viridis_c() +
            theme_minimal()
 
@@ -73,25 +78,25 @@ p1_taxa  = p1_taxa  + geom_tile() +
 ###################
 p2_beta = ggplot(mesh_dat, aes(x=d_d_away ,y=e_d,fill=beta))
 p2_beta = p2_beta + geom_tile() + 
-          labs(title = expression("Effect of"~d[D*","*dest]~"and"~e[d]~"on"~beta), x = expression(d[D*","*dest]), y = expression(e[d])) +
+          labs(title = expression("Effect of"~d^{D*","*dest}~"and"~e^D~"on"~beta), x = expression(d^{D*","*dest}), y = expression(e^D)) +
           scale_fill_viridis_c() +
           theme_minimal()
 
 p2_gamma = ggplot(mesh_dat, aes(x=d_d_away ,y=e_d,fill=gamma))
 p2_gamma = p2_gamma + geom_tile() + 
-           labs(title = expression("Effect of"~d[D*","*dest]~"and"~e[d]~"on"~gamma), x = expression(d[D*","*dest]), y = expression(e[d])) +
+           labs(title = expression("Effect of"~d^{D*","*dest}~"and"~e^D~"on"~gamma), x = expression(d^{D*","*dest}), y = expression(e^D)) +
            scale_fill_viridis_c() +
            theme_minimal()
 
 p2_size  = ggplot(mesh_dat, aes(x=d_d_away ,y=e_d,fill=mean_range_size))
 p2_size  = p2_size  + geom_tile() + 
-           labs(title = expression("Effect of"~d[D*","*dest]~"and"~e[d]~"on mean range size"), x = expression(d[D*","*dest]), y = expression(e[d])) +
+           labs(title = expression("Effect of"~d^{D*","*dest}~"and"~e^D~"on mean range size"), x = expression(d^{D*","*dest}), y = expression(e^D)) +
            scale_fill_viridis_c() +
            theme_minimal()
 
 p2_taxa  = ggplot(mesh_dat, aes(x=d_d_away ,y=e_d,fill=log_mean_extant_taxa))
 p2_taxa  = p2_taxa  + geom_tile() + 
-           labs(title = expression("Effect of"~d[D*","*dest]~"and"~e[d]~"on log mean extant taxa"), x = expression(d[D*","*dest]), y = expression(e[d])) +
+           labs(title = expression("Effect of"~d^{D*","*dest}~"and"~e^D~"on log mean extant taxa"), x = expression(d^{D*","*dest}), y = expression(e^D)) +
            scale_fill_viridis_c() +
            theme_minimal()
 
@@ -100,25 +105,25 @@ p2_taxa  = p2_taxa  + geom_tile() +
 ###################
 p3_beta = ggplot(mesh_dat, aes(x=w_d ,y=d_d_away,fill=beta))
 p3_beta = p3_beta + geom_tile() + 
-          labs(title = expression("Effect of"~d[D*","*dest]~"and"~w[d]~"on"~beta), x = expression(w[d]), y = expression(d[D*","*dest])) +
+          labs(title = expression("Effect of"~d^{D*","*dest}~"and"~w^D~"on"~beta), x = expression(w^D), y = expression(d^{D*","*dest})) +
           scale_fill_viridis_c() +
           theme_minimal()
 
 p3_gamma = ggplot(mesh_dat, aes(x=w_d ,y=d_d_away,fill=gamma))
 p3_gamma = p3_gamma + geom_tile() + 
-           labs(title = expression("Effect of"~d[D*","*dest]~"and"~w[d]~"on"~gamma), x = expression(w[d]), y = expression(d[D*","*dest])) +
+           labs(title = expression("Effect of"~d^{D*","*dest}~"and"~w^D~"on"~gamma), x = expression(w^D), y = expression(d^{D*","*dest})) +
            scale_fill_viridis_c() +
            theme_minimal()
 
 p3_size  = ggplot(mesh_dat, aes(x=w_d ,y=d_d_away,fill=mean_range_size))
 p3_size  = p3_size  + geom_tile() + 
-           labs(title = expression("Effect of"~d[D*","*dest]~"and"~w[d]~"on mean range size"), x = expression(w[d]), y = expression(d[D*","*dest])) +
+           labs(title = expression("Effect of"~d^{D*","*dest}~"and"~w^D~"on mean range size"), x = expression(w^D), y = expression(d^{D*","*dest})) +
            scale_fill_viridis_c() +
            theme_minimal()
 
 p3_taxa  = ggplot(mesh_dat, aes(x=w_d ,y=d_d_away,fill=log_mean_extant_taxa))
 p3_taxa  = p3_taxa  + geom_tile() + 
-           labs(title = expression("Effect of"~d[D*","*dest]~"and"~w[d]~"on log mean extant taxa"), x = expression(w[d]), y = expression(d[D*","*dest])) +
+           labs(title = expression("Effect of"~d^{D*","*dest}~"and"~w^D~"on log mean extant taxa"), x = expression(w^D), y = expression(d^{D*","*dest})) +
            scale_fill_viridis_c() +
            theme_minimal()
 
@@ -131,22 +136,22 @@ p3_taxa  = p3_taxa  + geom_tile() +
 ###################
 p1_ext = ggplot(ext_dat, aes(x = e_d, y = beta)) +
   geom_line(color = "skyblue", size = 1) +
-  labs(title = expression(beta), x = expression(e[d]), y = expression(beta)) +
+  labs(title = expression(beta), x = expression(e^D), y = expression(beta)) +
   theme_minimal()
 
 p2_ext = ggplot(ext_dat, aes(x = e_d, y = gamma)) +
   geom_line(color = "lightgreen",size = 1) +
-  labs(title = expression(gamma), x = expression(e[d]), y = expression(gamma)) +
+  labs(title = expression(gamma), x = expression(e^D), y = expression(gamma)) +
   theme_minimal()
 
 p3_ext = ggplot(ext_dat, aes(x = e_d, y = mean_range_size)) +
   geom_line(color = "red", size = 1) +
-  labs(title = expression("mean range size"), x = expression(e[d]), y = "mean range size") +
+  labs(title = expression("mean range size"), x = expression(e^D), y = "mean range size") +
   theme_minimal()
 
 p4_ext = ggplot(ext_dat, aes(x = e_d, y = mean_extant_taxa)) +
   geom_line(color = "black", size = 1) +
-  labs(title = expression("mean extant taxa"), x = expression(e[d]), y = "mean extant taxa") +
+  labs(title = expression("mean extant taxa"), x = expression(e^D), y = "mean extant taxa") +
   theme_minimal()
 
 main_title_ext <- textGrob(
@@ -159,22 +164,22 @@ main_title_ext <- textGrob(
 ###################
 p1_within = ggplot(within_dat, aes(x = w_d, y = beta)) +
   geom_line(color = "skyblue", size = 1) +
-  labs(title = expression( beta), x = expression(w[d]), y = expression(beta)) +
+  labs(title = expression( beta), x = expression(w^D), y = expression(beta)) +
   theme_minimal()
 
 p2_within = ggplot(within_dat, aes(x = w_d, y = gamma)) +
   geom_line(color = "lightgreen", size = 1) +
-  labs(title = expression(gamma), x = expression(w[d]), y = expression(gamma)) +
+  labs(title = expression(gamma), x = expression(w^D), y = expression(gamma)) +
   theme_minimal()
 
 p3_within = ggplot(within_dat, aes(x = w_d, y = mean_range_size)) +
   geom_line(color = "red", size = 1) +
-  labs(title = expression("mean range size"), x = expression(w[d]), y = "mean range size") +
+  labs(title = expression("mean range size"), x = expression(w^D), y = "mean range size") +
   theme_minimal()
 
 p4_within = ggplot(within_dat, aes(x = w_d, y = mean_extant_taxa)) +
   geom_line(color = "black", size = 1) +
-  labs(title = expression("mean extant taxa"), x = expression(w[d]), y = "mean extant taxa") +
+  labs(title = expression("mean extant taxa"), x = expression(w^D), y = "mean extant taxa") +
   theme_minimal()
 
 main_title_within <- textGrob(
@@ -187,22 +192,22 @@ main_title_within <- textGrob(
 ###################
 p1_dispersal = ggplot(disperse_dat, aes(x = d_d_away, y = beta)) +
   geom_line(color = "skyblue", size = 1) +
-  labs(title = expression(beta), x = expression(d[D*","*dest]), y = expression(beta)) +
+  labs(title = expression(beta), x = expression(d^{D*","*dest}), y = expression(beta)) +
   theme_minimal()
 
 p2_dispersal = ggplot(disperse_dat, aes(x = d_d_away, y = gamma)) +
   geom_line(color = "lightgreen", size = 1) +
-  labs(title = expression(gamma), x = expression(d[D*","*dest]), y = expression(gamma)) +
+  labs(title = expression(gamma), x = expression(d^{D*","*dest}), y = expression(gamma)) +
   theme_minimal()
 
 p3_dispersal = ggplot(disperse_dat, aes(x = d_d_away, y = mean_range_size)) +
   geom_line(color = "red", size = 1) +
-  labs(title = expression("mean range size"), x = expression(d[D*","*dest]), y = "mean range size") +
+  labs(title = expression("mean range size"), x = expression(d^{D*","*dest}), y = "mean range size") +
   theme_minimal()
 
 p4_dispersal = ggplot(disperse_dat, aes(x = d_d_away, y = mean_extant_taxa)) +
   geom_line(color = "black", size = 1) +
-  labs(title = expression("mean extant taxa"), x = expression(d[D*","*dest]), y = "mean extant taxa") +
+  labs(title = expression("mean extant taxa"), x = expression(d^{D*","*dest}), y = "mean extant taxa") +
   theme_minimal()
 
 main_title_disperse <- textGrob(
@@ -214,6 +219,7 @@ main_title_disperse <- textGrob(
 # # SAVE
 ###################
 pdf(file = paste0(out_fp,"treestats_dd.pdf"), width = 8, height = 6)
+# pdf(file = paste0(out_fp,"treestats_dd_small.pdf"), width = 8, height = 6)
 
 # Print each plot to a new page in the PDF
 print(p1_beta)
