@@ -25,12 +25,12 @@ library(geiger) # Package to produce extant-only tree
 # Create simplex grid
 #####################
 R"
-# num_steps = 10 # number of each individual point on mesh grid
-num_steps = 5 # number of each individual point on mesh grid
-# w_d = d_d_away <- round(seq(-2,0,length.out = num_steps),2)
-# e_d            <- round(seq(0,2,length.out = num_steps),2)
-w_d = d_d_away <- round(seq(-0.1,0,length.out = num_steps),2)
-e_d            <- round(seq(0,0.1,length.out = num_steps),2)
+num_steps = 10 # number of each individual point on mesh grid
+# num_steps = 5 # number of each individual point on mesh grid
+w_d = d_d_away <- round(seq(-2,0,length.out = num_steps),2)
+e_d            <- round(seq(0,2,length.out = num_steps),2)
+# w_d = d_d_away <- round(seq(-0.1,0,length.out = num_steps),2)
+# e_d            <- round(seq(0,0.1,length.out = num_steps),2)
 mesh           <- expand.grid(w_d,d_d_away,e_d)
 mesh           <- cbind(mesh,rep(1,nrow(mesh)),rep(1,nrow(mesh)),rep(0,nrow(mesh)),rep(0,nrow(mesh)),rep(0,nrow(mesh)),rep(0,nrow(mesh))) #placeholder for beta, gamma, mean range size, var range size,#discarded trees columns, mean extant taxa
 colnames(mesh) <- c('w_d','d_d_away','e_d','beta','gamma','mean_range_size','var_range_size','prop_invalid_trees','mean_extant_taxa') 
@@ -47,8 +47,8 @@ mesh = @rget mesh # pass mesh grid created in r to julia
 num_sim     = 50 # number of trees per combination
 num_regions = 3 # num of regions, matched with setting in sim_one_variable.jl
 num_row     = nrow(mesh) # number of parameter combinations 
-# arg1        = "simulate"
-arg1        = "resimulate"
+arg1        = "simulate"
+# arg1        = "resimulate"
 arg2        = "sim"
 
 
