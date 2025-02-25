@@ -34,6 +34,7 @@ max_taxa       = 10; # Maximum number of extant taxa to simulate
 max_time       = 100; # Maximum simulation time 
 stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
+# stop_condition = "both" # If the final number of extant taxa and time are the stopping conditions
 global resimulate = true # whether to resimulate in case of tree extinction or not
 global timebin    = "100" # time bin for tracking number of species across region/range in continuous time 
 
@@ -794,7 +795,7 @@ function simulate(sim_num)
         # # sampling next event type and associated state at the updated curr_time 
         #############################################
         # PS. each cell in state_event_tot_prob corresponds with a product of N_i and an event rate associated with the range i.
-        if (curr_time <= max_time && stop_condition == "time") || (stop_condition == "numtaxa")# If conditioned on time, and curr_time > max_time, do not draw next event. 
+        if (curr_time <= max_time && stop_condition == "time") || (stop_condition == "numtaxa") || (stop_condition  == "both")# If conditioned on time, and curr_time > max_time, do not draw next event. 
             state_event_tot_prob  =  state_event_tot_rate/sum(state_event_tot_rate) # convert rates to probabilities (e.g. N_A*w_A | N_AB*w_A | ....| ...)
             rand_u = rand(Uniform(0,1)) # draw random number between [0,1]
             next_event = Tuple{Any,Any,Any}[] 
@@ -977,6 +978,8 @@ function simulate(sim_num)
             do_simulation = false
         elseif stop_condition == "numtaxa" && num_alive_lineage >= max_taxa && num_alive_lineage > 0  # if condition on max_taxa and we don't have tree extinction
             do_simulation = false
+        elseif stop_condition == "both" && (num_alive_lineage >= max_taxa || curr_time >= max_time) && num_alive_lineage > 0  # if condition on time and taxa count and we don't have tree extinction
+            do_simulation = false
         ### Tree extinction case
         elseif num_alive_lineage == 0 && resimulate == false  # we have tree extinction and resimulate == false
             do_simulation = false 
@@ -1015,6 +1018,30 @@ function simulate(sim_num)
             for i in 1:length(which_lineages)
                 history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
                 history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+            end
+            # Fill the remaining rows with missing value of species_cts_time_region with num_spec_per_region from previous entry (since we just extend branch lengths here)
+            missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_region])
+            for i in 1:length(missing_rows)
+                species_cts_time_region[missing_rows[i]][2:(num_regions+1)] = deepcopy(num_species_per_region)
+            end
+            # Fill the remaining rows with missing value of  species_cts_time_range with num_spec_per_range from previous entry (since we just extend branch lengths here)
+            missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_range])
+            for i in 1:length(missing_rows)
+                species_cts_time_range[missing_rows[i]][2:(num_ranges+1)] = deepcopy(num_species_per_range)
+            end
+        elseif do_simulation == false && num_alive_lineage > 0 && stop_condition == "both" # if we don't have tree extinction and condition = "numtaxa"
+            which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
+            if num_alive_lineage >= max_taxa && curr_time < max_time
+                added_time = curr_time + 0.001
+                for i in 1:length(which_lineages)
+                    history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
+                    history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+                end
+            elseif num_alive_lineage < max_taxa && curr_time >= max_time
+                for i in 1:length(which_lineages)
+                    history_df.time_end[which_lineages[i]]      = copy(max_time) # extend their external branches to max time
+                    history_df.branch_length[which_lineages[i]] = max_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+                end
             end
             # Fill the remaining rows with missing value of species_cts_time_region with num_spec_per_region from previous entry (since we just extend branch lengths here)
             missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_region])
