@@ -797,7 +797,7 @@ function simulate(sim_num)
             # # sampling next event type and associated state at the updated curr_time 
             #############################################
             # PS. each cell in state_event_tot_prob corresponds with a product of N_i and an event rate associated with the range i.
-            if (curr_time <= max_time && stop_condition == "time") || (stop_condition == "numtaxa") || (stop_condition  == "both")# If conditioned on time, and curr_time > max_time, do not draw next event. 
+            if (curr_time < max_time && stop_condition == "time") || (stop_condition == "numtaxa") || (curr_time < max_time && stop_condition  == "both")# If conditioned on time, and curr_time > max_time, do not draw next event. 
                 state_event_tot_prob  =  state_event_tot_rate/sum(state_event_tot_rate) # convert rates to probabilities (e.g. N_A*w_A | N_AB*w_A | ....| ...)
                 rand_u = rand(Uniform(0,1)) # draw random number between [0,1]
                 next_event = Tuple{Any,Any,Any}[] 
@@ -1033,8 +1033,14 @@ function simulate(sim_num)
                 end
             elseif do_simulation == false && num_alive_lineage > 0 && stop_condition == "both" # if we don't have tree extinction and condition = "numtaxa"
                 which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
-                if num_alive_lineage >= max_taxa && curr_time < max_time
+                if num_alive_lineage >= max_taxa && curr_time < max_time #meeting max taxa requirement, and not meet time requirement
                     added_time = curr_time + 0.001
+                    for i in 1:length(which_lineages)
+                        history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
+                        history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+                    end
+                elseif  num_alive_lineage >= max_taxa && curr_time >= max_time #meeting max taxa requirement, and time requirement
+                    added_time = (curr_time-wait_time) + 0.001
                     for i in 1:length(which_lineages)
                         history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
                         history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
