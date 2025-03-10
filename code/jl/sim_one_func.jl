@@ -274,6 +274,20 @@ function myLogNormal(m,std)
     return LogNormal(μ,σ)
 end
 
+function redraw_dist()
+    rho_w = rand(LogUniform(0.0001,1));
+    rho_e = rand(LogUniform(0.0001,rho_w));
+    rho_d = rand(LogUniform(0.0001,1));
+    rho_b = rand(LogUniform(0.0001,1));
+    w_d      = -rand(LogUniform(1,2.0));
+    e_d      = rand(LogUniform(2,5.0));
+    d_d_home = -rand(LogUniform(1,2.0));
+    d_d_away = -rand(LogUniform(1,2.0));
+    b_d      = -rand(LogUniform(1,2.0)); 
+    ans = [rho_w,rho_e,rho_d,rho_b,w_d,e_d,d_d_home,d_d_away,b_d]
+    return(ans)
+end
+
 #########################
 # Rate function for within-region speciation 
 #########################
@@ -618,6 +632,7 @@ function simulate(sim_num)
     # # Whether to resimulate tree if it does not meet min_taxa condition (for "numtaxa" and both conditions)
     global resimulate_tree = true
     #
+    global num_trial = 1
     while resimulate_tree == true
         # set up containers
         num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
@@ -635,12 +650,15 @@ function simulate(sim_num)
         # start_range                        = 1;
         num_alive_lineage                  = 1; # Start with one species (stem branch)
         
-
-        rho_w = rand(Uniform(0.5,1));
-        rho_e = rand(Uniform(0.01,0.03));
-        rho_d = rand(Uniform(0.01,0.05));
-        rho_b = rand(Uniform(0.5,1));
-
+        rho_w = redraw_dist()[1];
+        rho_e = redraw_dist()[2];
+        rho_d = redraw_dist()[3];
+        rho_b = redraw_dist()[4];
+        w_d   = redraw_dist()[5];
+        e_d   = redraw_dist()[6];
+        d_d_home = redraw_dist()[7];
+        d_d_away = redraw_dist()[8];
+        b_d     =  redraw_dist()[9];
 
         ### sim_geosse (standard geosse)
         # rho_w = 1;
@@ -666,12 +684,6 @@ function simulate(sim_num)
         # d_d_home = rand(Normal(-1,0.4));
         # d_d_away = rand(Normal(-1,0.4));
         # b_d      = rand(Normal(-1,0.4));
-
-        w_d      = rand(Uniform(-2,-1));
-        e_d      = rand(Uniform(1,2));
-        d_d_home = rand(Uniform(-2,-1));
-        d_d_away = rand(Uniform(-2,-1));
-        b_d      = rand(Uniform(-2,-1));
 
         ### sim7 (lemma 3)
         # w_d      = -1;
@@ -752,6 +764,18 @@ function simulate(sim_num)
         anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
         #
         while do_simulation == true 
+            if num_trial > 5
+                rho_w = redraw_dist()[1];
+                rho_e = redraw_dist()[2];
+                rho_d = redraw_dist()[3];
+                rho_b = redraw_dist()[4];
+                w_d   = redraw_dist()[5];
+                e_d   = redraw_dist()[6];
+                d_d_home = redraw_dist()[7];
+                d_d_away = redraw_dist()[8];
+                b_d     =  redraw_dist()[9];
+                num_trial = 1
+            end
             #############################################
             # # get total sum of rates given the number of currently alive lineages
             #############################################
@@ -1014,7 +1038,6 @@ function simulate(sim_num)
                 #
                 # update the number of currently alive lineages 
                 num_alive_lineage    = sum(num_species_per_range)
-                println("numalivelineage =",num_alive_lineage)
             end
         #################################
         # # check if we stop simulation
@@ -1032,6 +1055,7 @@ function simulate(sim_num)
                 do_simulation = false 
             elseif num_alive_lineage == 0 && resimulate == true # we have tree extinction and resimulate == true 
                 do_simulation = true
+                num_trial     = num_trial + 1
             end
 
         #################################
@@ -1061,10 +1085,18 @@ function simulate(sim_num)
             elseif do_simulation == false && num_alive_lineage > 0 && stop_condition == "numtaxa" # if we don't have tree extinction and condition = "numtaxa"
                 # # extend the branch length of all currently living lineages to the curr_time 
                 which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
-                added_time = (curr_time-wait_time) + 0.001
-                for i in 1:length(which_lineages)
-                    history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
-                    history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+                if num_alive_lineage >= max_taxa && curr_time < max_time 
+                    added_time = curr_time + 0.001
+                    for i in 1:length(which_lineages)
+                        history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
+                        history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+                    end
+                elseif num_alive_lineage >= max_taxa && curr_time >= max_time 
+                    added_time = (curr_time-wait_time) + 0.001
+                    for i in 1:length(which_lineages)
+                        history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
+                        history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
+                    end
                 end
                 # Fill the remaining rows with missing value of species_cts_time_region with num_spec_per_region from previous entry (since we just extend branch lengths here)
                 missing_rows = findall(x -> ismissing(x), [v[2] for v in species_cts_time_region])

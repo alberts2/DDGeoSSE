@@ -267,6 +267,20 @@ function myLogNormal(m,std)
     return LogNormal(μ,σ)
 end
 
+function redraw_dist()
+    rho_w = rand(LogUniform(0.0001,1));
+    rho_e = rand(LogUniform(0.0001,rho_w));
+    rho_d = rand(LogUniform(0.0001,1));
+    rho_b = rand(LogUniform(0.0001,1));
+    w_d      = -rand(LogUniform(1,2.0));
+    e_d      = rand(LogUniform(2,5.0));
+    d_d_home = -rand(LogUniform(1,2.0));
+    d_d_away = -rand(LogUniform(1,2.0));
+    b_d      = -rand(LogUniform(1,2.0)); 
+    ans = [rho_w,rho_e,rho_d,rho_b,w_d,e_d,d_d_home,d_d_away,b_d]
+    return(ans)
+end
+
 #########################
 # Rate function for within-region speciation 
 #########################
@@ -610,6 +624,8 @@ function simulate(sim_num)
     global timebin
     # # Whether to resimulate tree if it does not meet min_taxa condition (for "numtaxa" and both conditions)
     global resimulate_tree = true
+    #
+    global num_trial = 1
     # set up containers
     while resimulate_tree == true
         num_species_per_range  = fill(0, num_ranges); # Empty vector to store number of species in each range
@@ -628,10 +644,15 @@ function simulate(sim_num)
         num_alive_lineage                  = 1; # Start with one species (stem branch)
         
 
-        rho_w = 0.05;
-        rho_e = 0.02;
-        rho_d = 0.05;
-        rho_b = 0.02;
+        # rho_w = 0.05;
+        # rho_e = 0.02;
+        # rho_d = 0.05;
+        # rho_b = 0.02;
+        
+        rho_w = redraw_dist()[1];
+        rho_e = redraw_dist()[2];
+        rho_d = redraw_dist()[3];
+        rho_b = redraw_dist()[4];
 
         w_d      = density_w;
         e_d      = density_e;
@@ -708,6 +729,10 @@ function simulate(sim_num)
         anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
         #
         while do_simulation == true 
+            if num_trial > 5
+                e_d      = density_e;
+                num_trial = 1
+            end
             #############################################
             # # get total sum of rates given the number of currently alive lineages
             #############################################
@@ -987,6 +1012,7 @@ function simulate(sim_num)
                 do_simulation = false 
             elseif num_alive_lineage == 0 && resimulate == true # we have tree extinction and resimulate == true 
                 do_simulation = true
+                num_trial     = num_trial + 1
             end
 
         #################################
