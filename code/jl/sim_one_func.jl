@@ -279,11 +279,11 @@ function redraw_dist()
     rho_e = rand(LogUniform(0.0001,rho_w));
     rho_d = rand(LogUniform(0.0001,1));
     rho_b = rand(LogUniform(0.0001,1));
-    w_d      = -rand(LogUniform(1,2.0));
-    e_d      = rand(LogUniform(2,5.0));
-    d_d_home = -rand(LogUniform(1,2.0));
-    d_d_away = -rand(LogUniform(1,2.0));
-    b_d      = -rand(LogUniform(1,2.0)); 
+    w_d      = -rand(Uniform(1,2.0));
+    e_d      = rand(Uniform(2,5.0));
+    d_d_home = -rand(Uniform(1,2.0));
+    d_d_away = -rand(Uniform(1,2.0));
+    b_d      = -rand(Uniform(1,2.0)); 
     ans = [rho_w,rho_e,rho_d,rho_b,w_d,e_d,d_d_home,d_d_away,b_d]
     return(ans)
 end
