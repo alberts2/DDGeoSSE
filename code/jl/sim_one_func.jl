@@ -36,9 +36,9 @@ out_dir  = out_path
 ################
 # Initial setting
 ################
-min_taxa       = 5; # Minimum number of extant taxa to simulate 
-max_taxa       = 10; # Maximum number of extant taxa to simulate
-max_time       = 30; # Maximum simulation time 
+min_taxa       = 10; # Minimum number of extant taxa to simulate 
+max_taxa       = rand(Uniform(100,300)); # Maximum number of extant taxa to simulate
+max_time       = rand(Uniform(70,100)); # Maximum simulation time 
 # stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 stop_condition = "both" # If the final number of extant taxa and time are the stopping conditions
@@ -764,7 +764,7 @@ function simulate(sim_num)
         anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
         #
         while do_simulation == true 
-            if num_trial > 5
+            if num_trial > 1
                 rho_w = redraw_dist()[1];
                 rho_e = redraw_dist()[2];
                 rho_d = redraw_dist()[3];

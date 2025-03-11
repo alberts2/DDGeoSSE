@@ -648,7 +648,7 @@ function simulate(sim_num)
         # rho_e = 0.02;
         # rho_d = 0.05;
         # rho_b = 0.02;
-        
+
         rho_w = redraw_dist()[1];
         rho_e = redraw_dist()[2];
         rho_d = redraw_dist()[3];
@@ -729,7 +729,7 @@ function simulate(sim_num)
         anagen_df = DataFrame(idx = [],time = [], from_state = [], to_state = [])
         #
         while do_simulation == true 
-            if num_trial > 5
+            if num_trial > 1
                 e_d      = density_e;
                 num_trial = 1
             end
