@@ -15,9 +15,9 @@ for (i in 1:num_sim){
   dat_phy           = read.tree(paste0("sim.",i,".tre")) # read the phylogeny
   #
   if (log(dat_labels$exp_scalar_e) > 2){ #filtered simulation with strong density effect on extinction
-    write.csv(dat_labels,file = paste0(out_fp,"sim.",i,".labels.csv") )
-    write.csv(dat_char,file = paste0(out_fp,"sim.",i,".dat.csv") )
-    write.csv(dat_extant_char,file = paste0(out_fp,"sim.",i,".extant.dat.csv") )
+    write.csv(dat_labels,file = paste0(out_fp,"sim.",i,".labels.csv"),row.names = FALSE )
+    write.csv(dat_char,file = paste0(out_fp,"sim.",i,".dat.csv"),row.names = FALSE )
+    write.csv(dat_extant_char,file = paste0(out_fp,"sim.",i,".extant.dat.csv"),row.names = FALSE )
     write.tree(dat_phy,file = paste0(out_fp,"sim.",i,".tre"))
   }
 }
