@@ -369,7 +369,7 @@ plot_rates_flow <- function(num_reg,type,folder_name,file_name = NULL,min_specie
   dat_netflow_standard      <- data.frame(model_type = rep("standard",1*length(n_j_curr)),num_species = rep(n_j_curr,1), rates = c(div_rate_standard),
                                   group = rep(c('Net flow'),each=length(n_j_curr)))
   #
-  dat_comb = rbind(dat_log,dat_standard)
+  dat_comb = rbind(dat_log,dat_standard,dat_netflow_log,dat_netflow_standard)
   ##############
   # PLOTTINGS  #
   ##############
