@@ -14,10 +14,30 @@ for (i in 1:num_sim){
   dat_extant_char   = read.csv(paste0("sim.",i,".extant.dat.csv")) # read extant character file
   dat_phy           = read.tree(paste0("sim.",i,".tre")) # read the phylogeny
   #
-  if (log(dat_labels$exp_scalar_e) > 2){ #filtered simulation with strong density effect on extinction
+  # if (log(dat_labels$exp_scalar_e) > 2){ #filtered simulation with strong density effect on extinction
+  #   write.csv(dat_labels,file = paste0(out_fp,"sim.",i,".labels.csv"),row.names = FALSE )
+  #   write.csv(dat_char,file = paste0(out_fp,"sim.",i,".dat.csv"),row.names = FALSE )
+  #   write.csv(dat_extant_char,file = paste0(out_fp,"sim.",i,".extant.dat.csv"),row.names = FALSE )
+  #   write.tree(dat_phy,file = paste0(out_fp,"sim.",i,".tre"))
+  # }
+  #
+  if (log(dat_labels$exp_scalar_e) > 3 && log(dat_labels$exp_scalar_e) < 4){ #filtered simulation with strong density effect on extinction
     write.csv(dat_labels,file = paste0(out_fp,"sim.",i,".labels.csv"),row.names = FALSE )
     write.csv(dat_char,file = paste0(out_fp,"sim.",i,".dat.csv"),row.names = FALSE )
     write.csv(dat_extant_char,file = paste0(out_fp,"sim.",i,".extant.dat.csv"),row.names = FALSE )
     write.tree(dat_phy,file = paste0(out_fp,"sim.",i,".tre"))
   }
+  #
+  # if (log(dat_labels$exp_scalar_w) < -2){ #filtered simulation with strong density effect on within region speciation
+  #   write.csv(dat_labels,file = paste0(out_fp,"sim.",i,".labels.csv"),row.names = FALSE )
+  #   write.csv(dat_char,file = paste0(out_fp,"sim.",i,".dat.csv"),row.names = FALSE )
+  #   write.csv(dat_extant_char,file = paste0(out_fp,"sim.",i,".extant.dat.csv"),row.names = FALSE )
+  #   write.tree(dat_phy,file = paste0(out_fp,"sim.",i,".tre"))
+  # }
+  # if (log(dat_labels$exp_scalar_w) < -1 && log(dat_labels$exp_scalar_e) < 1){ # strong density effect on within region speciation and weaker effect on extinction
+  #   write.csv(dat_labels,file = paste0(out_fp,"sim.",i,".labels.csv"),row.names = FALSE )
+  #   write.csv(dat_char,file = paste0(out_fp,"sim.",i,".dat.csv"),row.names = FALSE )
+  #   write.csv(dat_extant_char,file = paste0(out_fp,"sim.",i,".extant.dat.csv"),row.names = FALSE )
+  #   write.tree(dat_phy,file = paste0(out_fp,"sim.",i,".tre"))
+  # }
 }
