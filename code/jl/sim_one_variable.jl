@@ -268,16 +268,19 @@ function myLogNormal(m,std)
 end
 
 function redraw_dist()
-    rho_w = rand(LogUniform(0.0001,1));
-    rho_e = rand(LogUniform(0.0001,rho_w));
-    rho_d = rand(LogUniform(0.0001,1));
-    rho_b = rand(LogUniform(0.0001,1));
-    w_d      = -rand(Uniform(1,2.0));
-    e_d      = rand(Uniform(2,5.0));
-    d_d_home = -rand(Uniform(1,2.0));
-    d_d_away = -rand(Uniform(1,2.0));
-    b_d      = -rand(Uniform(1,2.0)); 
-    ans = [rho_w,rho_e,rho_d,rho_b,w_d,e_d,d_d_home,d_d_away,b_d]
+    w_d      = -rand(Uniform(0.0001,2.0));
+    e_d      = rand(Uniform(0.0001,2.0));
+    d_d_home = 0;
+    d_d_away = -rand(Uniform(0.0001,2.0));
+    b_d      = 0; 
+    #
+    ni_star = rand(min_taxa/num_regions:max_taxa/num_regions);
+    #
+    rho_w = rand(LogUniform(0.0001,5));
+    rho_d = rand(LogUniform(0.0001,5));
+    rho_b = rand(LogUniform(0.0001,5));
+    rho_e = ((1+log(ni_star))^(-e_d))*(rho_w*(log(ni_star)+1)^(w_d)+(num_regions-1)*rho_d*(1+log(ni_star+1))^(d_d_away));
+    ans = [rho_w,rho_e,rho_d,rho_b,w_d,e_d,d_d_home,d_d_away,b_d,ni_star]
     return(ans)
 end
 
@@ -659,6 +662,7 @@ function simulate(sim_num)
         d_d_home = 0;
         d_d_away = density_d;
         b_d      = 0;
+        ni_star  =  redraw_dist()[10];
 
 
         model        = 0; # using log DD model
