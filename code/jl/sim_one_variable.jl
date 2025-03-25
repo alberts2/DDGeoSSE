@@ -1201,11 +1201,37 @@ function simulate(sim_num)
         # Rate labels and other summary statistics
         #########################
         if indep_model == 0 # if simulated under standard constant geosse model
-            param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(0),
-                                        exp_scalar_e = exp(0), exp_scalar_d_i = exp(0), exp_scalar_d_j = exp(0), exp_scalar_b = exp(0));
+            if stop_condition == "time"
+                param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(0),
+                                       exp_scalar_e = exp(0), exp_scalar_d_i = exp(0), exp_scalar_d_j = exp(0), exp_scalar_b = exp(0), stop_condition = "time");
+            elseif stop_condition == "numtaxa"
+                param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(0),
+                                       exp_scalar_e = exp(0), exp_scalar_d_i = exp(0), exp_scalar_d_j = exp(0), exp_scalar_b = exp(0), stop_condition = "numtaxa");
+            elseif stop_condition == "both"
+                if num_alive_lineage >= max_taxa
+                    param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(0),
+                                       exp_scalar_e = exp(0), exp_scalar_d_i = exp(0), exp_scalar_d_j = exp(0), exp_scalar_b = exp(0), stop_condition = "numtaxa");
+                else
+                    param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(0),
+                                       exp_scalar_e = exp(0), exp_scalar_d_i = exp(0), exp_scalar_d_j = exp(0), exp_scalar_b = exp(0), stop_condition = "time");
+                end 
+            end
         elseif indep_model == 1 || only_density == 1 # if simulated under dd-geosse with or without non-density dependent factors
-            param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(w_d),
-                                    exp_scalar_e = exp(e_d), exp_scalar_d_i = exp(d_d_home), exp_scalar_d_j = exp(d_d_away), exp_scalar_b = exp(b_d));
+            if stop_condition == "time"
+                param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(w_d),
+                exp_scalar_e = exp(e_d), exp_scalar_d_i = exp(d_d_home), exp_scalar_d_j = exp(d_d_away), exp_scalar_b = exp(b_d), stop_condition = "time");
+            elseif stop_condition == "numtaxa"
+                param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(w_d),
+                exp_scalar_e = exp(e_d), exp_scalar_d_i = exp(d_d_home), exp_scalar_d_j = exp(d_d_away), exp_scalar_b = exp(b_d), stop_condition = "numtaxa");
+            elseif stop_condition == "both"
+                if num_alive_lineage >= max_taxa
+                    param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(w_d),
+                    exp_scalar_e = exp(e_d), exp_scalar_d_i = exp(d_d_home), exp_scalar_d_j = exp(d_d_away), exp_scalar_b = exp(b_d), stop_condition = "numtaxa");
+                else
+                    param_label_df =  DataFrame(log_base_w = log(rho_w),log_base_e = log(rho_e),log_base_d = log(rho_d),log_base_b = log(rho_b),exp_scalar_w = exp(w_d),
+                    exp_scalar_e = exp(e_d), exp_scalar_d_i = exp(d_d_home), exp_scalar_d_j = exp(d_d_away), exp_scalar_b = exp(b_d), stop_condition = "time");
+                end 
+            end
         end
         
         #########################
