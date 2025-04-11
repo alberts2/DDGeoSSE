@@ -275,19 +275,26 @@ function myLogNormal(m,std)
 end
 
 function redraw_dist()
+    function flip_coin(min_val,max_val)
+        if rand(Bool)
+            val = rand(Uniform(min_val, max_val))
+        else
+            val = rand(LogUniform(min_val, max_val))
+        end
+        return val
+    end
+    #
     w_d      = -rand(Uniform(0.0001,2.0));
     e_d      = rand(Uniform(0.0001,2.0));
     d_d_home = 0;
     d_d_away = -rand(Uniform(0.0001,2.0));
     b_d      = 0; 
     #
-    ni_star = rand(min_taxa/num_regions:max_taxa/num_regions);
-    #
-    rho_w = rand(LogUniform(0.0001,5));
-    rho_d = rand(LogUniform(0.0001,5));
-    rho_b = rand(LogUniform(0.0001,5));
-    rho_e = ((1+log(ni_star))^(-e_d))*(rho_w*(log(ni_star)+1)^(w_d)+(num_regions-1)*rho_d*(1+log(ni_star+1))^(d_d_away));
-    ans = [rho_w,rho_e,rho_d,rho_b,w_d,e_d,d_d_home,d_d_away,b_d,ni_star]
+    rho_w = flip_coin(0.0001,1);
+    rho_d = flip_coin(0.0001,1);
+    rho_b = flip_coin(0.0001,1);
+    rho_e = flip_coin(0.0001,1);
+    ans = [rho_w,rho_e,rho_d,rho_b,w_d,e_d,d_d_home,d_d_away,b_d]
     return(ans)
 end
 
@@ -653,16 +660,16 @@ function simulate(sim_num)
         # start_range                        = 1;
         num_alive_lineage                  = 1; # Start with one species (stem branch)
         
-        rho_w = redraw_dist()[1];
-        rho_e = redraw_dist()[2];
-        rho_d = redraw_dist()[3];
-        rho_b = redraw_dist()[4];
-        w_d   = redraw_dist()[5];
-        e_d   = redraw_dist()[6];
-        d_d_home = redraw_dist()[7];
-        d_d_away = redraw_dist()[8];
-        b_d     =  redraw_dist()[9];
-        ni_star  =  redraw_dist()[10];
+        param_val = redraw_dist() # draw the parameter values 
+        rho_w =  param_val[1];
+        rho_e =  param_val[2];
+        rho_d =  param_val[3];
+        rho_b =  param_val[4];
+        w_d   =  param_val[5];
+        e_d   =  param_val[6];
+        d_d_home =  param_val[7];
+        d_d_away =  param_val[8];
+        b_d     =   param_val[9];
 
         ### sim_geosse (standard geosse)
         # rho_w = 1;
@@ -769,16 +776,16 @@ function simulate(sim_num)
         #
         while do_simulation == true 
             if num_trial > 1
-                rho_w = redraw_dist()[1];
-                rho_e = redraw_dist()[2];
-                rho_d = redraw_dist()[3];
-                rho_b = redraw_dist()[4];
-                w_d   = redraw_dist()[5];
-                e_d   = redraw_dist()[6];
-                d_d_home = redraw_dist()[7];
-                d_d_away = redraw_dist()[8];
-                b_d     =  redraw_dist()[9];
-                ni_star  =  redraw_dist()[10];
+                param_val_rep = redraw_dist() #redraw the parameter values
+                rho_w = param_val_rep[1];
+                rho_e = param_val_rep[2];
+                rho_d = param_val_rep[3];
+                rho_b = param_val_rep[4];
+                w_d   = param_val_rep[5];
+                e_d   = param_val_rep[6];
+                d_d_home = param_val_rep[7];
+                d_d_away = param_val_rep[8];
+                b_d     =  param_val_rep[9];
                 num_trial = 1
             end
             #############################################
@@ -1043,6 +1050,7 @@ function simulate(sim_num)
                 #
                 # update the number of currently alive lineages 
                 num_alive_lineage    = sum(num_species_per_range)
+                # print("num_alive lineage = ",num_alive_lineage)
             end
         #################################
         # # check if we stop simulation

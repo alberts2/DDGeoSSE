@@ -652,17 +652,18 @@ function simulate(sim_num)
         # rho_d = 0.05;
         # rho_b = 0.02;
 
-        rho_w = redraw_dist()[1];
-        rho_e = redraw_dist()[2];
-        rho_d = redraw_dist()[3];
-        rho_b = redraw_dist()[4];
+        param_val = redraw_dist() # draw the parameter values 
+        rho_w =  param_val[1];
+        rho_e =  param_val[2];
+        rho_d =  param_val[3];
+        rho_b =  param_val[4];
 
         w_d      = density_w;
         e_d      = density_e;
         d_d_home = 0;
         d_d_away = density_d;
         b_d      = 0;
-        ni_star  =  redraw_dist()[10];
+        ni_star  =   param_val[10];
 
 
         model        = 0; # using log DD model
