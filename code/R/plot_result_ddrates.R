@@ -41,7 +41,8 @@ plot_rates_flow <- function(num_reg,type,folder_name,file_name = NULL,min_specie
   # browser()
   # NOTE: when making this as a package, the design will just be home/folder_name
   base_path      = Sys.getenv("HOME") # get to user's base directory
-  fp             = file.path(base_path,"Documents","Code Testing","density_geosse","data","deep_learning","server","DD-GeoSSE","5_reg","CURRENT_SET","model_selection_3",folder_name)
+  # fp             = file.path(base_path,"Documents","Code Testing","density_geosse","data","deep_learning","server","DD-GeoSSE","5_reg","CURRENT_SET","model_selection_7_mixture","Anoles",folder_name)
+  fp             = file.path(base_path,"Documents","Code Testing","density_geosse","data","deep_learning","server","DD-GeoSSE","5_reg","CURRENT_SET","model_selection_7_mixture","Viburnum",folder_name)
   if (file.exists(fp) == TRUE){
     in_fp          = paste0(fp,'/',type,'/')
   } else {
