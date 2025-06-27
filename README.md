@@ -1,1 +1,102 @@
-# density_geosse
+# Density-dependent GeoSSE (DDGeoSSE)
+
+DDGeoSSE is a generative, geographical model for species diversification that accounts for state-dependence and density-dependence. As a generative model, DDGeoSSE can simulate phylogenetic trees with the following events: 
+
+- **Within-region speciation** describes local speciation event in a particular region $i$.
+- **Extinction describes** extinction event in a particular region $i$.
+- **Dispersal** describes a dispersal event of a species from region $i$ to region $j$.
+- **Between-region speciation** describes a between-region speciation where an ancestral range of a parent species splits into two daughter species with range $k$ and $\ell$.
+
+As an inference model, DDGeoSSE is designed to work with [phyddle](https://phyddle.org/), which is a software for exploring phylogenetic models using deep learning. This allows us to perform two main inference tasks under our model: 
+
+- **Parameter estimation**
+- **Model selection**
+
+## Density-dependent dynamics 
+
+DDGeoSSE assigns a unique density-dependent scalar on each of the four events described above. These scalars take real values and can have positive, negative, or neutral correlation with local species richness. When the correlation is positive, the absolute rate of an event will increase with increasing species richness. When the correlation is negative, the absolute rate of an event will decreasing with increasing species richness. Lastly, when there is no correlation, the model is reduced to density-independent scenario where species richness has no influence on event rates. The model is flexible to test different hypotheses on the influence of species richness on diversification history. 
+
+## Simulation 
+
+DDGeoSSE is written in [julia](https://julialang.org/) to simulate phylogenetic trees with tip states. To run the simulation script, enter the `jl` directory:
+```shell
+cd ~/density_geosse/code/jl
+```
+
+Then run the `sim_one_func.jl` script using the following command: 
+
+```shell
+julia sim_one_func.jl simulate sim 0 1
+```
+
+This will simulate a complete phylogenetic tree with index 0  and store the output in the `simulate` directory. Currently, users can simulate trees with the following stopping conditions:
+
+- **numtaxa** : number of extant taxa
+- **time** : simulation run time
+- **both**  : number of extant taxa and run time
+
+Users can specify the number of regions by changing the value in `num_regions` in the simulation script. For each replicate, the script will return the following outputs: 
+
+- `sim.*.tre`: a complete phylogenetic tree written as standard Newick string.
+- `sim.*.labels.csv`: the true generating parameters of the replicate.
+- `sim.*.extant.dat.csv`: tip states denoted by presence/absence of a species in regions.
+- `sim.*.dat.csv`: tip states of species (including extinct species).
+- `anagenetic_changes_tree_*.csv` : a history of anagenetic events on the tree.
+- `cladogenetic event history_*.csv`: a history of cladogenetic events on the tree.
+- `species_count_range_tree_*.csv` : a list containing number of extant species across geographical ranges at each sampled event time.
+- `species_count_region_tree_*.csv` : a list containing number of extant species across different regions at each sampled event time.
+- `cts_species_count_range_tree_*.csv`: a list containing number of extant species across geographical ranges in continuous time steps.
+- `cts_species_count_region_tree_*.csv`: a list containing number of extant species across different regions in continuous time steps.
+
+## Phyddle analysis
+
+Users can also run the simulation script directly from $\texttt{phyddle}$ by running the following script:
+```shell
+phyddle -s S -c config.py
+```
+Users can specify the size of the training dataset by modifying the `config.py` file (details on https://phyddle.org/overview.html#simulate)
+
+To run the format step, users only require to provide `sim.*.tre`, `sim.*.labels.csv`, and `sim.*.dat.csv` in their training dataset as an input, and run the following command:
+```shell
+phyddle -s F -c config.py
+```
+
+Finally, users can run the rest of the pipeline, as follows:
+```shell
+# train network with tensor data
+phyddle -s T -c config.py
+
+# make prediction 
+phyddle -s E -c config.py
+
+# generate figures and store in plot
+phyddle -s P -c config.py
+```
+
+To make prediction on parameter values, users need to specify the following parameters in `param_est` field of the `config.py` file, as follows 
+
+- 'log_base_w'          : 'num' # This is the base rate for within-region speciation in log scale
+- 'log_base_e'          : 'num', # This is the base rate for extinction in log scale
+- 'log_base_d'          : 'num', # This is the base rate for dispersal in log scale 
+- 'log_base_b'          : 'num', # This is the base rate for between-region speciation in log scale
+- 'exp_scalar_w'        : 'num', # This is the density-dependent scalar for within-region speciation in exponential scale
+- 'exp_scalar_e'        : 'num', # This is the density-dependent scalar for extinction in exponential scale
+- 'exp_scalar_d_j'      : 'num' # This is the density-dependent scalar for incoming dispersal into region $j$ in exponential scale
+
+For model selection, users need to specify the following parameters in `param_est` field of the `config.py` file, as follows 
+
+- 'speciation_status'          : 'cat' # 0 = density-independent within-region speciation, 1 = density-dependent within-region speciation 
+- 'extinction_status'          : 'cat' # 0 = density-independent extinction, 1 = density-dependent extinction
+- 'dispersal_status'           : 'cat' # 0 = density-independent incoming dispersal, 1 = density-dependent incoming dispersal
+
+## Miscellaneous
+
+- For model selection, we recommmend users to train a network to make a prediction on one desity-dependent feature at a time, based on the finding we found on the manuscript.
+- The `rel_extant_age_tol` in the `config.py` can cause incorrectly pruned tree of only extant species, if the number specified is too small. We recommend assigning large value when dealing with simulated data, and small value when dealing with empirical data.
+- If you have any questions, please e-mail me at [soewongsono@wustl.edu](mailto:soewongsono@wustl.edu).
+                          
+                           
+                            
+                           
+                            
+
