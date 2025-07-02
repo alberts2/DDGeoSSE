@@ -20,6 +20,8 @@ using Distributions # Package for using probability distributions
 using DataFrames # Package for dataframe
 using CSV # Package to write to csv
 
+import Random # For drawing randoms seed 
+
 ####################
 # Command line arguments 
 ####################
@@ -37,8 +39,8 @@ out_dir  = out_path
 # Initial setting
 ################
 min_taxa       = 10; # Minimum number of extant taxa to simulate 
-max_taxa       = rand(Uniform(100,300)); # Maximum number of extant taxa to simulate
-max_time       = rand(Uniform(70,100)); # Maximum simulation time 
+#max_taxa       = rand(Uniform(100,300)); # Maximum number of extant taxa to simulate
+#max_time       = rand(Uniform(70,100)); # Maximum simulation time 
 # stop_condition = "time" # If time is the stopping condition
 # stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 stop_condition = "both" # If the final number of extant taxa and time are the stopping conditions
@@ -1448,6 +1450,9 @@ end
 
 for i in start_idx:(start_idx + batch_size - 1)
     println("Simulation ", i)
+    Random.seed!(i)
+    global max_taxa       = rand(Uniform(100,300)); # Maximum number of extant taxa to simulate
+    global max_time       = rand(Uniform(70,100)); # Maximum simulation time
     simulate(i)
 end
 
