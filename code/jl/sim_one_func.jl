@@ -41,8 +41,8 @@ out_dir  = out_path
 min_taxa       = 10; # Minimum number of extant taxa to simulate 
 #max_taxa       = rand(Uniform(100,300)); # Maximum number of extant taxa to simulate
 #max_time       = rand(Uniform(70,100)); # Maximum simulation time 
-# stop_condition = "time" # If time is the stopping condition
-# stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
+#stop_condition = "time" # If time is the stopping condition
+#stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 stop_condition = "both" # If the final number of extant taxa and time are the stopping conditions
 global resimulate = true # whether to resimulate in case of tree extinction or not
 global timebin    = "100" # time bin for tracking number of species across region/range in continuous time 
@@ -1081,8 +1081,6 @@ function simulate(sim_num)
             if do_simulation == false && num_alive_lineage > 0 && stop_condition == "time" # if we don't have tree extinction and condition = "time"
                 # # extend the branch length of all currently living lineages to the max_time 
                 which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
-                # println(history_df)
-                # println(which_lineages)
                 for i in 1:length(which_lineages)
                     history_df.time_end[which_lineages[i]]      = copy(max_time) # extend their external branches to max time
                     history_df.branch_length[which_lineages[i]] = max_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
@@ -1100,14 +1098,8 @@ function simulate(sim_num)
             elseif do_simulation == false && num_alive_lineage > 0 && stop_condition == "numtaxa" # if we don't have tree extinction and condition = "numtaxa"
                 # # extend the branch length of all currently living lineages to the curr_time 
                 which_lineages = filter(row -> ismissing(row.extinct_status) && ismissing(row.split_status),history_df).idx
-                if num_alive_lineage >= max_taxa && curr_time < max_time 
+                if num_alive_lineage >= max_taxa
                     added_time = curr_time + 0.001
-                    for i in 1:length(which_lineages)
-                        history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
-                        history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
-                    end
-                elseif num_alive_lineage >= max_taxa && curr_time >= max_time 
-                    added_time = (curr_time-wait_time) + 0.001
                     for i in 1:length(which_lineages)
                         history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
                         history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
@@ -1132,7 +1124,7 @@ function simulate(sim_num)
                         history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
                     end
                 elseif  num_alive_lineage >= max_taxa && curr_time >= max_time #meeting max taxa requirement, and time requirement
-                    added_time = (curr_time-wait_time) + 0.001
+                    added_time = curr_time + 0.001
                     for i in 1:length(which_lineages)
                         history_df.time_end[which_lineages[i]]      = copy(added_time) # extend their external branches to added_time
                         history_df.branch_length[which_lineages[i]] = added_time - deepcopy(history_df.time_start[which_lineages[i]][1]) # compute the length of external branch
