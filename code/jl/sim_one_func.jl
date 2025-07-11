@@ -1293,6 +1293,66 @@ function simulate(sim_num)
         end
         
         #########################
+        # Append start state on each branch 
+        #########################
+
+        full_history = DataFrame(parent_index = [], child_1_index = [], child_2_index = [],
+                                 parent_start_state = [], parent_end_state = [],
+                                 child_1_start_state = [], child_1_end_state = [],
+                                 child_2_start_state = [], child_2_end_state = [],
+                                 extinct = [], split = [],
+                                 start_time = [], end_time = [], branch_length = [])
+        
+        for i in 1:nrow(history_df) #loop over all nodes
+            parent_id = history_df[i, :idx] #get the parent index
+            child1_id = history_df[i, :child_1_idx] #get child 1 index
+            child2_id = history_df[i, :child_2_idx] #get child 2 index
+            extinct    = history_df[i, :extinct_status] #parent extinct or not
+            split      = history_df[i, :split_status] #parent speciate or not
+            start_t    = history_df[i, :time_start] #start time of the parent branch
+            end_t      = history_df[i, :time_end] #end time of the parent branch
+            branch_len = history_df[i, :branch_length] #parent branch length
+            #
+            which_parent_id = findfirst(x -> !ismissing(x) && x == parent_id, anagen_df.idx) #find the parent anagenetic history
+            if which_parent_id === nothing
+                parent_start = history_df[parent_id,:final_state]
+                parent_end   = copy(parent_start)
+            else 
+                parent_start = anagen_df[which_parent_id, :from_state]
+                parent_end   = copy(history_df[parent_id, :final_state])
+            end
+            #
+            if ismissing(child1_id)
+                child1_start = missing
+                child1_end = missing
+            else
+                which_child1_idx = findfirst(x -> !ismissing(x) && x == child1_id, anagen_df.idx) #find the child 1 anagenetic history, if the child exists
+                if which_child1_idx === nothing
+                    child1_start = history_df[child1_id, :final_state]
+                    child1_end   = copy(child1_start)
+                else 
+                    child1_start = anagen_df[which_child1_idx, :from_state]
+                    child1_end  = copy(history_df[child1_id, :final_state])
+                end
+            end
+               #
+            if ismissing(child2_id)
+                child2_start = missing
+                child2_end = missing
+            else
+                which_child2_idx = findfirst(x -> !ismissing(x) && x == child2_id, anagen_df.idx) #find the child 1 anagenetic history, if the child exists
+                if which_child2_idx === nothing
+                    child2_start = history_df[child2_id, :final_state]
+                    child2_end   = copy(child2_start)
+                else 
+                    child2_start = anagen_df[which_child2_idx, :from_state]
+                    child2_end  = copy(history_df[child2_id, :final_state])
+                end
+            end 
+            push!(full_history,(parent_id,child1_id,child2_id,parent_start,parent_end,child1_start,child1_end,child2_start,child2_end,extinct,split,start_t,end_t,branch_len))
+        end
+
+        #########################
         # Write Newick string 
         #########################
         newick_str = write_newick(history_df)
@@ -1425,6 +1485,7 @@ function simulate(sim_num)
         CSV.write(joinpath(out_dir,"cts_species_count_region_tree_"*string(sim_num)*".csv"),dat_reg_cts) # write species count across regions over cts times
         CSV.write(joinpath(out_dir,"cts_species_count_range_tree_"*string(sim_num)*".csv"),dat_range_cts) # write species count across ranges over cts times
         CSV.write(joinpath(out_dir,"cladogenetic event history_"*string(sim_num)*".csv"),history_df) # write cladogenetic event history over event times 
+        CSV.write(joinpath(out_dir,"full_history_"*string(sim_num)*".csv"),full_history) # write cladogenetic event history over event times 
         #
         if num_alive_lineage < min_taxa && (stop_condition == "both" || stop_condition == "numtaxa")
             resimulate_tree = true 
