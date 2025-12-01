@@ -8,8 +8,8 @@ library(grid)
 ###################
 # # SET FILE SYSTEM
 ###################
-# filename = "smaller_interval/mesh_tree_stats_50_small.csv"
-filename = "larger_interval/mesh_tree_stats_50_big.csv"
+filename = "smaller_interval/mesh_tree_stats_50_small.csv"
+# filename = "larger_interval/mesh_tree_stats_50_big.csv"
 
 fp              = "/Users/albertsoewongsono/Documents/Code\ Testing/density_geosse/"
 in_fp           = paste0(fp,"data/tree_stats/",filename)
@@ -137,22 +137,26 @@ p3_taxa  = p3_taxa  + geom_tile() +
 p1_ext = ggplot(ext_dat, aes(x = e_d, y = beta)) +
   geom_line(color = "skyblue", size = 1) +
   labs(title = expression(beta), x = expression(e^D), y = expression(beta)) +
-  theme_minimal()
+  theme_minimal() + 
+  scale_x_reverse() 
 
 p2_ext = ggplot(ext_dat, aes(x = e_d, y = gamma)) +
   geom_line(color = "lightgreen",size = 1) +
   labs(title = expression(gamma), x = expression(e^D), y = expression(gamma)) +
-  theme_minimal()
+  theme_minimal() +
+  scale_x_reverse() 
 
 p3_ext = ggplot(ext_dat, aes(x = e_d, y = mean_range_size)) +
   geom_line(color = "red", size = 1) +
   labs(title = expression("mean range size"), x = expression(e^D), y = "mean range size") +
-  theme_minimal()
+  theme_minimal() +
+  scale_x_reverse() 
 
 p4_ext = ggplot(ext_dat, aes(x = e_d, y = mean_extant_taxa)) +
   geom_line(color = "black", size = 1) +
   labs(title = expression("mean extant taxa"), x = expression(e^D), y = "mean extant taxa") +
-  theme_minimal()
+  theme_minimal() +
+  scale_x_reverse() 
 
 main_title_ext <- textGrob(
   "Effect of density-dependent extinction on",
@@ -218,8 +222,8 @@ main_title_disperse <- textGrob(
 ###################
 # # SAVE
 ###################
-pdf(file = paste0(out_fp,"treestats_dd.pdf"), width = 8, height = 6)
-# pdf(file = paste0(out_fp,"treestats_dd_small.pdf"), width = 8, height = 6)
+# pdf(file = paste0(out_fp,"treestats_dd.pdf"), width = 8, height = 6)
+pdf(file = paste0(out_fp,"treestats_dd_small.pdf"), width = 8, height = 6)
 
 # Print each plot to a new page in the PDF
 print(p1_beta)
