@@ -53,15 +53,22 @@ plot_reg_occupancy = function(num_sim,batch_num){
   #
   p_1 = ggplot(dat_reg_1, aes(x = time_vec, y = mean_reg)) +
     geom_line(color = "blue", size = 1) +
-    labs(title = paste0("Average region 1 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count") 
+    geom_hline(yintercept = 19, linetype = "dashed", color = "purple", size = 1)+
+    labs(title = paste0("Average region 1 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
+    theme(axis.text = element_text(size = 26))
   
   p_2 = ggplot(dat_reg_2, aes(x = time_vec, y = mean_reg)) +
     geom_line(color = "red", size = 1) + 
-    labs(title = paste0("Average region 2 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count") 
+    geom_hline(yintercept = 19, linetype = "dashed", color = "purple", size = 1)+
+    labs(title = paste0("Average region 2 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
+    theme(axis.text = element_text(size = 26))
   
   p_3 = ggplot(dat_reg_3, aes(x = time_vec, y = mean_reg)) +
     geom_line(color = "black", size = 1) +
-    labs(title = paste0("Average region 3 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count") 
+    geom_hline(yintercept = 19, linetype = "dashed", color = "purple", size = 1)+
+    labs(title = paste0("Average region 3 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
+    theme(axis.text = element_text(size = 26))
+  
   plot(p_1)
   plot(p_2)
   plot(p_3)
