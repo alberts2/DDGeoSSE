@@ -1,6 +1,6 @@
-# Density-dependent GeoSSE (DDGeoSSE)
+# Diversity-dependent GeoSSE (DDGeoSSE)
 
-DDGeoSSE is a generative, geographical model for species diversification that accounts for state-dependence and density-dependence. As a generative model, DDGeoSSE can simulate phylogenetic trees with the following events: 
+DDGeoSSE is a generative, geographical model for species diversification that accounts for state-dependence and diversity-dependence. As a generative model, DDGeoSSE can simulate phylogenetic trees with the following events: 
 
 - **Within-region speciation** describes local speciation event in a particular region $i$.
 - **Extinction describes** extinction event in a particular region $i$.
@@ -12,9 +12,13 @@ As an inference model, DDGeoSSE is designed to work with [phyddle](https://phydd
 - **Parameter estimation**
 - **Model selection**
 
-## Density-dependent dynamics 
+## Diversity-dependent dynamics 
 
-DDGeoSSE assigns a unique density-dependent scalar on each of the four events described above. These scalars take real values and can have positive, negative, or neutral correlation with local species richness. When the correlation is positive, the absolute rate of an event will increase with increasing species richness. When the correlation is negative, the absolute rate of an event will decreasing with increasing species richness. Lastly, when there is no correlation, the model is reduced to density-independent scenario where species richness has no influence on event rates. The model is flexible to test different hypotheses on the influence of species richness on diversification history. 
+DDGeoSSE assigns a unique diversity-dependent effect parameter on each of the four events described above. These scalars take real values and can have positive, negative, or neutral correlation with local species richness. When the correlation is positive, the absolute rate of an event will increase with increasing species richness. When the correlation is negative, the absolute rate of an event will decreasing with increasing species richness. Lastly, when there is no correlation, the model is reduced to diversity-independent scenario where species richness has no influence on event rates. The model is flexible to test different hypotheses on the influence of species richness on diversification history. These diversiy-dependent dynamics then may induce local equilibrium diversity. This quantity is a result from the data-generating process, instead of being estimated separately from model parameters as commonly employed in other diversity-dependent models. Thus, avoiding the risk of statistical biases. 
+
+## Local equilibrium diversity 
+
+By definition, local equilibrium diversity represents a stationary state of the process, in which the number of local species diversity remains unchanged over time under a given model of diversification. Currently, to be able to derive this quantity, the model assumes that each region share the equal equilibrium diversity. However, this assumption can be relaxed if biologists have a good estimate on what these numbers for all the other regions in the system. 
 
 ## Simulation 
 
@@ -47,6 +51,7 @@ Users can specify the number of regions by changing the value in `num_regions` i
 - `species_count_region_tree_*.csv` : a list containing number of extant species across different regions at each sampled event time.
 - `cts_species_count_range_tree_*.csv`: a list containing number of extant species across geographical ranges in continuous time steps.
 - `cts_species_count_region_tree_*.csv`: a list containing number of extant species across different regions in continuous time steps.
+- `full_history_*.csv`: a list containing a complete history of the tree. 
 
 ## Phyddle analysis
 
@@ -88,6 +93,12 @@ For model selection, users need to specify the following parameters in `param_es
 - 'speciation_status'          : 'cat' # 0 = density-independent within-region speciation, 1 = density-dependent within-region speciation 
 - 'extinction_status'          : 'cat' # 0 = density-independent extinction, 1 = density-dependent extinction
 - 'dispersal_status'           : 'cat' # 0 = density-independent incoming dispersal, 1 = density-dependent incoming dispersal
+
+## Important R scripts 
+
+- `solve_balance.R`       : this script solves for the local equilibrium diversity numerically given parameters under a fully unconstrained DDGeoSSE model.
+- `plot_reg_occupancy.R`  : this script visualizes region occupancy through time from a DDGeoSSE simulation.
+- `plot_range_occupancy.R : this script visualizes number of species in each range through time from a DDGeoSSE simulation.
 
 ## Miscellaneous
 
