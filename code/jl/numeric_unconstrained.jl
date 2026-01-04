@@ -40,7 +40,8 @@ out_dir  = out_path
 ################
 min_taxa       = 10; # Minimum number of extant taxa to simulate 
 #max_taxa       = rand(Uniform(100,300)); # Maximum number of extant taxa to simulate
-max_time       = 20; # Maximum simulation time 
+# max_time       = 20; # Maximum simulation time 
+max_time       = 75; # Maximum simulation time 
 stop_condition = "time" # If time is the stopping condition
 #stop_condition = "numtaxa" # If the final number of extant taxa is the stopping condition
 # stop_condition = "both" # If the final number of extant taxa and time are the stopping conditions
@@ -1475,7 +1476,8 @@ for i in start_idx:(start_idx + batch_size - 1)
     println("Simulation ", i)
     Random.seed!(i)
     global max_taxa       = rand(Uniform(100,300)); # Maximum number of extant taxa to simulate
-    global max_time       = 20; # Maximum simulation time
+    # global max_time       = 20; # Maximum simulation time
+    global max_time       = 75; # Maximum simulation time 
     simulate(i)
 end
 
