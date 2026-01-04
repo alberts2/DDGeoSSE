@@ -81,8 +81,16 @@ library(gridExtra)
       ext_rate_1_vec[i] = rho_e*(log(mean_reg_1[i])+1)^{e_d}
       ext_rate_2_vec[i] = rho_e*(log(mean_reg_2[i])+1)^{e_d}
     }
-    disp_rate_1_2_vec[i] = rho_d*(log(mean_reg_1[i])+1)^{d_d_home}*(log(mean_reg_2[i]+1)+1)^{d_d_away}
-    disp_rate_2_1_vec[i] = rho_d*(log(mean_reg_2[i])+1)^{d_d_home}*(log(mean_reg_1[i]+1)+1)^{d_d_away}
+    if (mean_reg_1[i]==0){
+      disp_rate_1_2_vec[i] = 0
+    } else {
+      disp_rate_1_2_vec[i] = rho_d*(log(mean_reg_1[i])+1)^{d_d_home}*(log(mean_reg_2[i]+1)+1)^{d_d_away}
+    }
+    if (mean_reg_2[i]==0){
+      disp_rate_2_1_vec[i] = 0
+    } else {
+      disp_rate_2_1_vec[i] = rho_d*(log(mean_reg_2[i])+1)^{d_d_home}*(log(mean_reg_1[i]+1)+1)^{d_d_away}
+    }
   }
   #
   summary_df = data.frame(time = time_vec,mean_reg_1 = mean_reg_1,
