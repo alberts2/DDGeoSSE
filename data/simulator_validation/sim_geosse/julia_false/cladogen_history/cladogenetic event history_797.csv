@@ -1,0 +1,4 @@
+idx,time_start,time_end,final_state,extinct_status,split_status,branch_length,child_1_idx,child_2_idx,event_type
+1,0.0,4.409145708995743,2,0,1,4.409145708995743,2,3,w
+2,4.409145708995743,7,2,,,2.5908542910042573,,,
+3,4.409145708995743,4.977095298299519,2,1,0,0.567949589303776,,,e

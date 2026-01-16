@@ -1,0 +1,2 @@
+idx,time_start,time_end,final_state,extinct_status,split_status,branch_length,child_1_idx,child_2_idx,event_type
+1,0.0,7,2,,,7.0,,,
