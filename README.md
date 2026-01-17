@@ -24,7 +24,7 @@ By definition, local equilibrium diversity represents a stationary state of the 
 
 DDGeoSSE is written in [julia](https://julialang.org/) to simulate phylogenetic trees with tip states. To run the simulation script, enter the `jl` directory:
 ```shell
-cd ~/density_geosse/code/jl
+cd ~/DDGeoSSE/code/jl
 ```
 
 Then run the `sim_one_func.jl` script using the following command: 
@@ -84,15 +84,15 @@ To make prediction on parameter values, users need to specify the following para
 - 'log_base_e'          : 'num', # This is the base rate for extinction in log scale
 - 'log_base_d'          : 'num', # This is the base rate for dispersal in log scale 
 - 'log_base_b'          : 'num', # This is the base rate for between-region speciation in log scale
-- 'exp_scalar_w'        : 'num', # This is the density-dependent scalar for within-region speciation in exponential scale
-- 'exp_scalar_e'        : 'num', # This is the density-dependent scalar for extinction in exponential scale
-- 'exp_scalar_d_j'      : 'num' # This is the density-dependent scalar for incoming dispersal into region $j$ in exponential scale
+- 'exp_scalar_w'        : 'num', # This is the diversity-dependent scalar for within-region speciation in exponential scale
+- 'exp_scalar_e'        : 'num', # This is the diversity-dependent scalar for extinction in exponential scale
+- 'exp_scalar_d_j'      : 'num' # This is the diversity-dependent scalar for incoming dispersal into region $j$ in exponential scale
 
 For model selection, users need to specify the following parameters in `param_est` field of the `config.py` file, as follows 
 
-- 'speciation_status'          : 'cat' # 0 = density-independent within-region speciation, 1 = density-dependent within-region speciation 
-- 'extinction_status'          : 'cat' # 0 = density-independent extinction, 1 = density-dependent extinction
-- 'dispersal_status'           : 'cat' # 0 = density-independent incoming dispersal, 1 = density-dependent incoming dispersal
+- 'speciation_status'          : 'cat' # 0 = diversity-independent within-region speciation, 1 = diversity-dependent within-region speciation 
+- 'extinction_status'          : 'cat' # 0 = diversity-independent extinction, 1 = diversity-dependent extinction
+- 'dispersal_status'           : 'cat' # 0 = diversity-independent incoming dispersal, 1 = diversity-dependent incoming dispersal
 
 ## Important R scripts 
 
@@ -110,7 +110,7 @@ For model selection, users need to specify the following parameters in `param_es
 
 ## Miscellaneous
 
-- For model selection, we recommmend users to train a network to make a prediction on one desity-dependent feature at a time, based on the finding we found on the manuscript.
+- For model selection, we recommmend users to train a network to make a prediction on one diversity-dependent feature at a time, based on the finding we found on the manuscript.
 - The `rel_extant_age_tol` in the `config.py` can cause incorrectly pruned tree of only extant species, if the number specified is too small. We recommend assigning large value when dealing with simulated data, and small value when dealing with empirical data.
 - If you have any questions, please e-mail me at [soewongsono@wustl.edu](mailto:soewongsono@wustl.edu).
                           
