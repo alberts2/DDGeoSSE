@@ -98,7 +98,15 @@ For model selection, users need to specify the following parameters in `param_es
 
 - `solve_balance.R`       : this script solves for the local equilibrium diversity numerically given parameters under a fully unconstrained DDGeoSSE model.
 - `plot_reg_occupancy.R`  : this script visualizes region occupancy through time from a DDGeoSSE simulation.
-- `plot_range_occupancy.R : this script visualizes number of species in each range through time from a DDGeoSSE simulation.
+- `plot_range_occupancy.R` : this script visualizes number of species in each range through time from a DDGeoSSE simulation.
+
+## Important directories 
+- [empiric_anolis](https://github.com/alberts2/DDGeoSSE/tree/main/data/empiric_anolis/use_this) contains Anolis phylogeny and biogeographic range data.
+- [empiric_viburnum_rescaled](https://github.com/alberts2/DDGeoSSE/tree/main/data/empiric_viburnum_rescaled) contains Viburnum phylogeny and biogeographic range data.
+- [theory_validation](https://github.com/alberts2/DDGeoSSE/tree/main/data/theory_validation) contains simulated dataset used to validate theories related to local equilibrium diversity (Figure 3).
+- [simulator_validation](https://github.com/alberts2/DDGeoSSE/tree/main/data/simulator_validation/sim_geosse) contains simulated dataset used to validate the simulator under a GeoSSE model (Supplemental Figures 23-24).
+- [conceptual_fig](https://github.com/alberts2/DDGeoSSE/tree/main/data/conceptual_fig) contains example to visualize DDGeoSSE (Figure 1)
+- [deep_learning](https://github.com/alberts2/DDGeoSSE/tree/main/data/deep_learning/server/DD-GeoSSE/5_reg/CURRENT_SET) contains trained neural networks used for analyses on the manuscript. 
 
 ## Miscellaneous
 
