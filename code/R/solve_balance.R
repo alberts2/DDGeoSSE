@@ -12,6 +12,10 @@
 
 # note if you get Error in if (fa * fb < 0) { : missing value where TRUE/FALSE needed
 # that means the lower bound becomes too small such that we have log(0)
+
+# 8 June: added parameters from benchmarking test with 3 to 7 regions 
+num_region = 3
+solve_balance(1.0,0.1,0.2,-0.6,0.5,0,-0.5,num_region,c(1,100),tol = 1e-6,max_expand = 2)$root*num_region
 solve_balance <- function(rho_w, rho_d, rho_e,
                           w_d, e_d, d_d_src, d_d_dest,
                           num_reg,
