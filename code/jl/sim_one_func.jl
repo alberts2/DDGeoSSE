@@ -10,6 +10,7 @@
 # save rate scalars in log scale
 # Convert character data at tips (multiple binary characters -> single multi-state characters)
 
+# automate csv for region and ranges for any number of regions and ranges (June 8)
 #####################
 # Load julia packages
 #####################
@@ -1376,107 +1377,29 @@ function simulate(sim_num)
         CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".extant"*".dat.csv"),extant_tip_character_df;header=true)
         CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".dat.csv"),all_tip_character_df;header=true)
 
-        if num_regions == 2
-        # # convert each summary statistics to data frame 
-            dat_reg_cts   = DataFrame(time = [x[1] for x in species_cts_time_region],region_1 = [x[2] for x in species_cts_time_region],
-                                    region_2 = [x[3] for x in species_cts_time_region])
+        dat_reg = DataFrame(
+            (Symbol("region_$i") => [x[i+1] for x in region_count_history]
+            for i in 1:num_regions)...
+        )
+        insertcols!(dat_reg, 1, :time => [x[1] for x in region_count_history])
 
-            dat_range_cts = DataFrame(time = [x[1] for x in species_cts_time_range],range_1 = [x[2] for x in species_cts_time_range],
-                                    range_2 = [x[3] for x in species_cts_time_range],range_3 = [x[4] for x in species_cts_time_range])
+        dat_range = DataFrame(
+            (Symbol("range_" * string(i)) => [x[i+1] for x in range_count_history]
+            for i in 1:num_ranges)...
+        )
+        insertcols!(dat_range, 1, :time => [x[1] for x in range_count_history])
 
-            dat_reg   = DataFrame(time = [x[1] for x in region_count_history],region_1 = [x[2] for x in region_count_history],
-                                region_2 = [x[3] for x in region_count_history])
+        dat_reg_cts = DataFrame(
+            (Symbol("region_" * string(i)) => [x[i+1] for x in species_cts_time_region]
+            for i in 1:num_regions)...
+        )
+        insertcols!(dat_reg_cts, 1, :time => [x[1] for x in species_cts_time_region])
 
-            dat_range = DataFrame(time = [x[1] for x in range_count_history],range_1 = [x[2] for x in range_count_history],
-                                range_2 = [x[3] for x in range_count_history],range_3 = [x[4] for x in range_count_history])   
-        elseif num_regions == 3
-        # convert each summary statistics to data frame 
-            dat_reg_cts   = DataFrame(time = [x[1] for x in species_cts_time_region],region_1 = [x[2] for x in species_cts_time_region],
-                                    region_2 = [x[3] for x in species_cts_time_region],region_3 = [x[4] for x in species_cts_time_region])
-
-            dat_range_cts = DataFrame(time = [x[1] for x in species_cts_time_range],range_1 = [x[2] for x in species_cts_time_range],
-                                    range_2 = [x[3] for x in species_cts_time_range],range_3 = [x[4] for x in species_cts_time_range],
-                                    range_4 = [x[5] for x in species_cts_time_range],range_5 = [x[6] for x in species_cts_time_range],
-                                    range_6 = [x[7] for x in species_cts_time_range],range_7 = [x[8] for x in species_cts_time_range])
-
-            dat_reg   = DataFrame(time = [x[1] for x in region_count_history],region_1 = [x[2] for x in region_count_history],
-                                    region_2 = [x[3] for x in region_count_history],region_3 = [x[4] for x in region_count_history])
-
-            dat_range = DataFrame(time = [x[1] for x in range_count_history],range_1 = [x[2] for x in range_count_history],
-                                    range_2 = [x[3] for x in range_count_history],range_3 = [x[4] for x in range_count_history],
-                                    range_4 = [x[5] for x in range_count_history],range_5 = [x[6] for x in range_count_history],
-                                    range_6 = [x[7] for x in range_count_history],range_7 = [x[8] for x in range_count_history])
-        elseif num_regions == 4
-            # convert each summary statistics to data frame 
-            dat_reg_cts   = DataFrame(time = [x[1] for x in species_cts_time_region],region_1 = [x[2] for x in species_cts_time_region],
-                                    region_2 = [x[3] for x in species_cts_time_region],region_3 = [x[4] for x in species_cts_time_region],
-                                    region_4 = [x[5] for x in species_cts_time_region])
-                                
-            dat_range_cts = DataFrame(time = [x[1] for x in species_cts_time_range],range_1 = [x[2] for x in species_cts_time_range],
-                                    range_2 = [x[3] for x in species_cts_time_range],range_3 = [x[4] for x in species_cts_time_range],
-                                    range_4 = [x[5] for x in species_cts_time_range],range_5 = [x[6] for x in species_cts_time_range],
-                                    range_6 = [x[7] for x in species_cts_time_range],range_7 = [x[8] for x in species_cts_time_range],
-                                    range_8 = [x[9] for x in species_cts_time_range],range_9 = [x[10] for x in species_cts_time_range],
-                                    range_10 = [x[11] for x in species_cts_time_range],range_11 = [x[12] for x in species_cts_time_range],
-                                    range_12 = [x[13] for x in species_cts_time_range],range_13 = [x[14] for x in species_cts_time_range],
-                                    range_14 = [x[15] for x in species_cts_time_range],range_15 = [x[16] for x in species_cts_time_range])
-                                
-            dat_reg   = DataFrame(time = [x[1] for x in region_count_history],region_1 = [x[2] for x in region_count_history],
-                                    region_2 = [x[3] for x in region_count_history],region_3 = [x[4] for x in region_count_history],
-                                    region_4 = [x[5] for x in region_count_history])
-                                
-            dat_range = DataFrame(time = [x[1] for x in range_count_history],range_1 = [x[2] for x in range_count_history],
-                                    range_2 = [x[3] for x in range_count_history],range_3 = [x[4] for x in range_count_history],
-                                    range_4 = [x[5] for x in range_count_history],range_5 = [x[6] for x in range_count_history],
-                                    range_6 = [x[7] for x in range_count_history],range_7 = [x[8] for x in range_count_history],
-                                    range_8 = [x[9] for x in range_count_history],range_9 = [x[10] for x in range_count_history],
-                                    range_10 = [x[11] for x in range_count_history],range_11 = [x[12] for x in range_count_history],
-                                    range_12 = [x[13] for x in range_count_history],range_13 = [x[14] for x in range_count_history],
-                                    range_14 = [x[15] for x in range_count_history],range_15 = [x[16] for x in range_count_history])
-        elseif num_regions == 5
-            # convert each summary statistics to data frame 
-            dat_reg_cts   = DataFrame(time = [x[1] for x in species_cts_time_region],region_1 = [x[2] for x in species_cts_time_region],
-                                    region_2 = [x[3] for x in species_cts_time_region],region_3 = [x[4] for x in species_cts_time_region],
-                                    region_4 = [x[5] for x in species_cts_time_region],region_5 = [x[6] for x in species_cts_time_region])
-                                
-            dat_range_cts = DataFrame(time = [x[1] for x in species_cts_time_range],range_1 = [x[2] for x in species_cts_time_range],
-                                    range_2 = [x[3] for x in species_cts_time_range],range_3 = [x[4] for x in species_cts_time_range],
-                                    range_4 = [x[5] for x in species_cts_time_range],range_5 = [x[6] for x in species_cts_time_range],
-                                    range_6 = [x[7] for x in species_cts_time_range],range_7 = [x[8] for x in species_cts_time_range],
-                                    range_8 = [x[9] for x in species_cts_time_range],range_9 = [x[10] for x in species_cts_time_range],
-                                    range_10 = [x[11] for x in species_cts_time_range],range_11 = [x[12] for x in species_cts_time_range],
-                                    range_12 = [x[13] for x in species_cts_time_range],range_13 = [x[14] for x in species_cts_time_range],
-                                    range_14 = [x[15] for x in species_cts_time_range],range_15 = [x[16] for x in species_cts_time_range],
-                                    range_16 = [x[17] for x in species_cts_time_range],range_17 = [x[18] for x in species_cts_time_range],
-                                    range_18 = [x[19] for x in species_cts_time_range],range_19 = [x[20] for x in species_cts_time_range],
-                                    range_20 = [x[21] for x in species_cts_time_range],range_21 = [x[22] for x in species_cts_time_range],
-                                    range_22 = [x[23] for x in species_cts_time_range],range_23 = [x[24] for x in species_cts_time_range],
-                                    range_24 = [x[25] for x in species_cts_time_range],range_25 = [x[26] for x in species_cts_time_range],
-                                    range_26 = [x[27] for x in species_cts_time_range],range_27 = [x[28] for x in species_cts_time_range],
-                                    range_28 = [x[29] for x in species_cts_time_range],range_29 = [x[30] for x in species_cts_time_range],
-                                    range_30 = [x[31] for x in species_cts_time_range],range_31 = [x[32] for x in species_cts_time_range])
-                                
-            dat_reg   = DataFrame(time = [x[1] for x in region_count_history],region_1 = [x[2] for x in region_count_history],
-                                    region_2 = [x[3] for x in region_count_history],region_3 = [x[4] for x in region_count_history],
-                                    region_4 = [x[5] for x in region_count_history],region_5 = [x[6] for x in region_count_history])
-                                
-            dat_range = DataFrame(time = [x[1] for x in range_count_history],range_1 = [x[2] for x in range_count_history],
-                                    range_2 = [x[3] for x in range_count_history],range_3 = [x[4] for x in range_count_history],
-                                    range_4 = [x[5] for x in range_count_history],range_5 = [x[6] for x in range_count_history],
-                                    range_6 = [x[7] for x in range_count_history],range_7 = [x[8] for x in range_count_history],
-                                    range_8 = [x[9] for x in range_count_history],range_9 = [x[10] for x in range_count_history],
-                                    range_10 = [x[11] for x in range_count_history],range_11 = [x[12] for x in range_count_history],
-                                    range_12 = [x[13] for x in range_count_history],range_13 = [x[14] for x in range_count_history],
-                                    range_14 = [x[15] for x in range_count_history],range_15 = [x[16] for x in range_count_history],
-                                    range_16 = [x[17] for x in range_count_history],range_17 = [x[18] for x in range_count_history],
-                                    range_18 = [x[19] for x in range_count_history],range_19 = [x[20] for x in range_count_history],
-                                    range_20 = [x[21] for x in range_count_history],range_21 = [x[22] for x in range_count_history],
-                                    range_22 = [x[23] for x in range_count_history],range_23 = [x[24] for x in range_count_history],
-                                    range_24 = [x[25] for x in range_count_history],range_25 = [x[26] for x in range_count_history],
-                                    range_26 = [x[27] for x in range_count_history],range_27 = [x[28] for x in range_count_history],
-                                    range_28 = [x[29] for x in range_count_history],range_29 = [x[30] for x in range_count_history],
-                                    range_30 = [x[31] for x in range_count_history],range_31 = [x[32] for x in range_count_history])
-        end
+        dat_range_cts = DataFrame(
+            (Symbol("range_" * string(i)) => [x[i+1] for x in species_cts_time_range]
+            for i in 1:num_ranges)...
+        )
+        insertcols!(dat_range_cts, 1, :time => [x[1] for x in species_cts_time_range])
         # # write summary statistics and rates to file
         CSV.write(joinpath(out_dir,out_prefix*"."*string(sim_num)*".labels.csv"),param_label_df) # write rate parameters and number of alive tips
         CSV.write(joinpath(out_dir,"anagenetic_changes_tree_"*string(sim_num)*".csv"),anagen_df) # write anagenetic history along branches over event times 
