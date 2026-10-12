@@ -2,13 +2,13 @@
 
 library(ggplot2)
 
-plot_reg_occupancy = function(num_sim,batch_num){
+plot_reg_occupancy = function(num_sim,lemma){
   ###################
   # # SET FILE SYSTEM
   ####################
   fp     = "/Users/albertsoewongsono/Documents/Code Testing/density_geosse/"
-  region_dat_fp  = paste0(fp,"data/sim",batch_num,"/cts_species_count_reg/") #input region occupancy data in cts time 
-  out_fp = paste0(fp,"plot/sim",batch_num,"/") #output 
+  region_dat_fp  = paste0(fp,"data/theory_validation/lemma",lemma,"_new/cts_species_count_reg/") #input region occupancy data in cts time 
+  out_fp = paste0(fp,"plot/lemma",lemma,"_new/") #output
   
   ###################
   # # INITIALIZATION
@@ -55,19 +55,19 @@ plot_reg_occupancy = function(num_sim,batch_num){
     geom_line(color = "blue", size = 1) +
     geom_hline(yintercept = 19, linetype = "dashed", color = "purple", size = 1)+
     labs(title = paste0("Average region 1 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
-    theme(axis.text = element_text(size = 26))
+    theme_minimal() +theme(axis.text = element_text(size = 26))
   
   p_2 = ggplot(dat_reg_2, aes(x = time_vec, y = mean_reg)) +
     geom_line(color = "red", size = 1) + 
     geom_hline(yintercept = 19, linetype = "dashed", color = "purple", size = 1)+
     labs(title = paste0("Average region 2 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
-    theme(axis.text = element_text(size = 26))
+    theme_minimal() +theme(axis.text = element_text(size = 26))
   
   p_3 = ggplot(dat_reg_3, aes(x = time_vec, y = mean_reg)) +
     geom_line(color = "black", size = 1) +
     geom_hline(yintercept = 19, linetype = "dashed", color = "purple", size = 1)+
     labs(title = paste0("Average region 3 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
-    theme(axis.text = element_text(size = 26))
+    theme_minimal() +theme(axis.text = element_text(size = 26))
   
   plot(p_1)
   plot(p_2)
@@ -79,6 +79,6 @@ plot_reg_occupancy = function(num_sim,batch_num){
   ggsave("region_1_occupancy.jpg",plot = p_1, path = out_fp,width = 8, height = 6, units = "in")
   ggsave("region_2_occupancy.jpg",plot = p_2, path = out_fp,width = 8, height = 6, units = "in")
   ggsave("region_3_occupancy.jpg",plot = p_3, path = out_fp,width = 8, height = 6, units = "in")
-  
+  # 
   return(summary_df)
 }
