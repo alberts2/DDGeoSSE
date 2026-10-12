@@ -129,6 +129,7 @@ p_1 = ggplot(summary_df, aes(x = time_vec)) +
   scale_y_continuous(limits = c(0, 10),breaks = seq(0, 10, by = 2))+
   scale_color_manual(values = c("species_1" = "blue", "species_2" = "red", "tot_species" = "gray")) +
   labs(title = paste0("Region occupancy"), x = "Time", y = "Species count") +
+  theme_minimal()+
   theme(
     axis.text = element_text(size = 20),       # tick labels
     legend.position = "none"
@@ -158,10 +159,11 @@ p_2 = ggplot(summary_df, aes(x = time)) +
        x = "Time",
        y = "Speciation rate",
        color = "Region") + 
+  theme_minimal()+
   theme(
     axis.text = element_text(size = 20),       # tick labels
     legend.position = "none"
-  )
+  ) 
 
 # Plot extinction rates in both regions
 p_3 = ggplot(summary_df, aes(x = time)) +
@@ -187,10 +189,11 @@ p_3 = ggplot(summary_df, aes(x = time)) +
        x = "Time",
        y = "Extinction rate",
        color = "Region") +
+  theme_minimal()+
   theme(
     axis.text = element_text(size = 20),       # tick labels
     legend.position = "none"
-  )
+  ) 
 
 # Plot dispersal rates in both regions
 p_4 = ggplot(summary_df, aes(x = time)) +
@@ -216,13 +219,14 @@ p_4 = ggplot(summary_df, aes(x = time)) +
        x = "Time",
        y = "Dispersal rate",
        color = "Region") +
+  theme_minimal()+
   theme(
     axis.text = element_text(size = 20),       # tick labels
     legend.position = "none"
-  )
+  ) 
+ 
 
 p_5 = grid.arrange(p_1, p_2, p_3, p_4, ncol = 2)
-
 
 ###################
 # # SAVE PLOT
@@ -234,3 +238,4 @@ ggsave("dispersal_rate.jpg",plot = p_4, path = out_fp,width = 8, height = 4, uni
 ggsave("combined_plot.jpg",plot = p_5, path = out_fp,width = 8, height = 4, units = "in")
 # return(summary_df)
 # }
+
