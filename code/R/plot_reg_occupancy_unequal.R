@@ -88,23 +88,6 @@ library(ggplot2)
   dat_reg_2 <- data.frame(time = time_vec, sum_reg_2)
   dat_reg_3 <- data.frame(time = time_vec, sum_reg_3)
   #
-  # p_1 = ggplot(dat_reg_1, aes(x = time_vec, y = mean_reg)) +
-  #   geom_line(color = "blue", size = 1) +
-  #   geom_hline(yintercept = 5, linetype = "dashed", color = "purple", size = 1)+
-  #   labs(title = paste0("Average region 1 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
-  #   theme(axis.text = element_text(size = 26))
-  # 
-  # p_2 = ggplot(dat_reg_2, aes(x = time_vec, y = mean_reg)) +
-  #   geom_line(color = "red", size = 1) + 
-  #   geom_hline(yintercept = 10, linetype = "dashed", color = "purple", size = 1)+
-  #   labs(title = paste0("Average region 2 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
-  #   theme(axis.text = element_text(size = 26))
-  # 
-  # p_3 = ggplot(dat_reg_3, aes(x = time_vec, y = mean_reg)) +
-  #   geom_line(color = "black", size = 1) +
-  #   geom_hline(yintercept = 15, linetype = "dashed", color = "purple", size = 1)+
-  #   labs(title = paste0("Average region 3 occupancy across ",num_sim," trees"), x = "Time", y = "Average species count")+
-  #   theme(axis.text = element_text(size = 26))
   p_1 <- ggplot(dat_reg_1, aes(x = time, y = mean)) +
     geom_ribbon(aes(ymin = lower, ymax = upper),
                 alpha = 0.2, fill = "blue") +
@@ -114,6 +97,7 @@ library(ggplot2)
     labs(title = paste0("Average region 1 occupancy across ", num_sim, " trees"),
          x = "Time", y = "Average species count") +
     coord_cartesian(xlim = c(0, 500000),ylim = c(0, 25)) +
+    theme_minimal()+
     theme(
       axis.text  = element_text(size = 23),
       axis.title = element_text(size = 26),
@@ -129,6 +113,7 @@ library(ggplot2)
     labs(title = paste0("Average region 2 occupancy across ", num_sim, " trees"),
          x = "Time", y = "Average species count") +
     coord_cartesian(xlim = c(0, 500000),ylim = c(0, 25)) +
+    theme_minimal()+
     theme(
       axis.text  = element_text(size = 23),
       axis.title = element_text(size = 26),
@@ -144,6 +129,7 @@ library(ggplot2)
     labs(title = paste0("Average region 3 occupancy across ", num_sim, " trees"),
          x = "Time", y = "Average species count") +
     coord_cartesian(xlim = c(0, 500000),ylim = c(0, 25)) +
+    theme_minimal()+
     theme(
       axis.text  = element_text(size = 23),
       axis.title = element_text(size = 26),
@@ -165,4 +151,3 @@ library(ggplot2)
   print(p_3)
   dev.off()
   
-  return(summary_df)
